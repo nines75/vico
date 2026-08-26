@@ -1,127 +1,24 @@
 import { defineContentScript } from "#imports";
+import { loadSettings } from "@/utils/storage";
 import "./inject.css";
+import type { Settings } from "@/types/settings.types";
+
+let settings: Settings;
 
 export default defineContentScript({
   allFrames: true,
   matches: ["http://*/*", "https://*/*", "file:///*"],
-  main() {
-    browser.storage.local.get(tc.settings, function (storage) {
-      tc.settings.keyBindings = storage.keyBindings; // Array
-      if (storage.keyBindings.length === 0) {
-        // if first initialization of 0.5.3
-        // UPDATE
-        tc.settings.keyBindings.push({
-          action: "slower",
-          key: Number(storage.slowerKeyCode) || 83,
-          value: Number(storage.speedStep) || 0.1,
-          force: false,
-          predefined: true,
-        }); // default S
-        tc.settings.keyBindings.push({
-          action: "faster",
-          key: Number(storage.fasterKeyCode) || 68,
-          value: Number(storage.speedStep) || 0.1,
-          force: false,
-          predefined: true,
-        }); // default: D
-        tc.settings.keyBindings.push({
-          action: "rewind",
-          key: Number(storage.rewindKeyCode) || 90,
-          value: Number(storage.rewindTime) || 10,
-          force: false,
-          predefined: true,
-        }); // default: Z
-        tc.settings.keyBindings.push({
-          action: "advance",
-          key: Number(storage.advanceKeyCode) || 88,
-          value: Number(storage.advanceTime) || 10,
-          force: false,
-          predefined: true,
-        }); // default: X
-        tc.settings.keyBindings.push({
-          action: "reset",
-          key: Number(storage.resetKeyCode) || 82,
-          value: 1,
-          force: false,
-          predefined: true,
-        }); // default: R
-        tc.settings.keyBindings.push({
-          action: "fast",
-          key: Number(storage.fastKeyCode) || 71,
-          value: Number(storage.fastSpeed) || 1.8,
-          force: false,
-          predefined: true,
-        }); // default: G
-        tc.settings.version = "0.5.3";
+  async main() {
+    // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
+    settings = await loadSettings();
 
-        browser.storage.local.set({
-          keyBindings: tc.settings.keyBindings,
-          version: tc.settings.version,
-          displayKeyCode: tc.settings.displayKeyCode,
-          rememberSpeed: tc.settings.rememberSpeed,
-          forceLastSavedSpeed: tc.settings.forceLastSavedSpeed,
-          audioBoolean: tc.settings.audioBoolean,
-          startHidden: tc.settings.startHidden,
-          enabled: tc.settings.enabled,
-          controllerOpacity: tc.settings.controllerOpacity,
-          blacklist: tc.settings.blacklist.replaceAll(regStrip, ""),
-        });
-      }
-      tc.settings.lastSpeed = Number(storage.lastSpeed);
-      tc.settings.displayKeyCode = Number(storage.displayKeyCode);
-      tc.settings.rememberSpeed = Boolean(storage.rememberSpeed);
-      tc.settings.forceLastSavedSpeed = Boolean(storage.forceLastSavedSpeed);
-      tc.settings.audioBoolean = Boolean(storage.audioBoolean);
-      tc.settings.enabled = Boolean(storage.enabled);
-      tc.settings.startHidden = Boolean(storage.startHidden);
-      tc.settings.controllerOpacity = Number(storage.controllerOpacity);
-      tc.settings.blacklist = String(storage.blacklist);
-
-      // ensure that there is a "display" binding (for upgrades from versions that had it as a separate binding)
-      if (
-        tc.settings.keyBindings.filter((x) => x.action == "display").length ===
-        0
-      ) {
-        tc.settings.keyBindings.push({
-          action: "display",
-          key: Number(storage.displayKeyCode) || 86,
-          value: 0,
-          force: false,
-          predefined: true,
-        }); // default V
-      }
-
-      initializeWhenReady(document);
-    });
+    initializeWhenReady(document);
   },
 });
 
 const regStrip = /^[\r\t\f\v ]+|[\r\t\f\v ]+$/gm;
 
 const tc = {
-  settings: {
-    lastSpeed: 1, // default 1x
-    enabled: true, // default enabled
-    speeds: {}, // empty object to hold speed for each source
-
-    displayKeyCode: 86, // default: V
-    rememberSpeed: false, // default: false
-    forceLastSavedSpeed: false, //default: false
-    audioBoolean: false, // default: false
-    startHidden: false, // default: false
-    controllerOpacity: 0.3, // default: 0.3
-    keyBindings: [],
-    blacklist: `\
-      www.instagram.com
-      twitter.com
-      vine.co
-      imgur.com
-      teams.microsoft.com
-    `.replaceAll(regStrip, ""),
-    defaultLogLevel: 4,
-    logLevel: 3,
-  },
-
   // Holds a reference to all of the AUDIO/VIDEO DOM elements we've attached to
   mediaElements: [],
 };
@@ -135,9 +32,9 @@ const tc = {
   6 - debug high verbosity + stack trace on each message
 */
 function log(message, level) {
-  const verbosity = tc.settings.logLevel;
+  const verbosity = settings.logLevel;
   if (level === undefined) {
-    level = tc.settings.defaultLogLevel;
+    level = settings.defaultLogLevel;
   }
   if (verbosity >= level) {
     switch (level) {
@@ -168,14 +65,14 @@ function log(message, level) {
 
 function getKeyBindings(action, what = "value") {
   try {
-    return tc.settings.keyBindings.find((item) => item.action === action)[what];
+    return settings.keyBindings.find((item) => item.action === action)[what];
   } catch {
     return false;
   }
 }
 
 function setKeyBindings(action, value) {
-  tc.settings.keyBindings.find((item) => item.action === action).value = value;
+  settings.keyBindings.find((item) => item.action === action).value = value;
 }
 
 function defineVideoController() {
@@ -200,10 +97,10 @@ function defineVideoController() {
 
     this.video = target;
     this.parent = target.parentElement || parent;
-    storedSpeed = tc.settings.speeds[target.currentSrc];
-    if (tc.settings.rememberSpeed) {
+    storedSpeed = settings.speeds[target.currentSrc];
+    if (settings.rememberSpeed) {
       log("Recalling stored speed due to rememberSpeed being enabled", 5);
-      storedSpeed = tc.settings.lastSpeed;
+      storedSpeed = settings.lastSpeed;
     } else {
       if (!storedSpeed) {
         log(
@@ -221,13 +118,13 @@ function defineVideoController() {
     this.div = this.initializeControls();
 
     const mediaEventAction = function (event) {
-      storedSpeed = tc.settings.speeds[event.target.currentSrc];
-      if (tc.settings.rememberSpeed) {
+      storedSpeed = settings.speeds[event.target.currentSrc];
+      if (settings.rememberSpeed) {
         log(
-          "Storing lastSpeed into tc.settings.speeds (rememberSpeed enabled)",
+          "Storing lastSpeed into settings.speeds (rememberSpeed enabled)",
           5,
         );
-        storedSpeed = tc.settings.lastSpeed;
+        storedSpeed = settings.lastSpeed;
       } else {
         if (!storedSpeed) {
           log("Overwriting stored speed to 1.0 (rememberSpeed not enabled)", 4);
@@ -304,7 +201,7 @@ function defineVideoController() {
       wrapper.classList.add("vsc-nosource");
     }
 
-    if (tc.settings.startHidden) {
+    if (settings.startHidden) {
       wrapper.classList.add("vsc-hidden");
     }
 
@@ -315,7 +212,7 @@ function defineVideoController() {
         </style>
 
         <div id="controller" style="top:${top}; left:${left}; opacity:${
-          tc.settings.controllerOpacity
+          settings.controllerOpacity
         }">
           <span data-action="drag" class="draggable">${speed}</span>
           <span id="controls">
@@ -407,7 +304,7 @@ function escapeStringRegExp(str) {
 
 function isBlacklisted() {
   let blacklisted = false;
-  for (let match of tc.settings.blacklist.split("\n")) {
+  for (let match of settings.blacklist.split("\n")) {
     match = match.replaceAll(regStrip, "");
     if (match.length === 0) continue;
 
@@ -460,9 +357,9 @@ function setupListener() {
 
     log("Updating controller with new speed", 5);
     speedIndicator.textContent = speed.toFixed(2);
-    tc.settings.speeds[src] = speed;
+    settings.speeds[src] = speed;
     log("Storing lastSpeed in settings for the rememberSpeed feature", 5);
-    tc.settings.lastSpeed = speed;
+    settings.lastSpeed = speed;
     log("Syncing chrome settings for lastSpeed", 5);
     browser.storage.local.set({ lastSpeed: speed }, function () {
       log("Speed setting saved: " + speed, 5);
@@ -484,12 +381,12 @@ function setupListener() {
        * If the last speed is forced, only update the speed based on events created by
        * video speed instead of all video speed change events.
        */
-      if (tc.settings.forceLastSavedSpeed) {
+      if (settings.forceLastSavedSpeed) {
         if (event.detail && event.detail.origin === "videoSpeed") {
           video.playbackRate = event.detail.speed;
           updateSpeedFromEvent(video);
         } else {
-          video.playbackRate = tc.settings.lastSpeed;
+          video.playbackRate = settings.lastSpeed;
         }
         event.stopImmediatePropagation();
       } else {
@@ -549,7 +446,7 @@ function getShadow(parent) {
 
 function initializeNow(document) {
   log("Begin initializeNow", 5);
-  if (!tc.settings.enabled) return;
+  if (!settings.enabled) return;
   // enforce init-once due to redundant callers
   if (!document.body || document.body.classList.contains("vsc-initialized")) {
     return;
@@ -611,9 +508,7 @@ function initializeNow(document) {
           return false;
         }
 
-        const item = tc.settings.keyBindings.find(
-          (item) => item.key === keyCode,
-        );
+        const item = settings.keyBindings.find((item) => item.key === keyCode);
         if (item) {
           runAction(item.action, item.value);
           if (item.force === "true") {
@@ -636,7 +531,7 @@ function initializeNow(document) {
     }
     if (
       node.nodeName === "VIDEO" ||
-      (node.nodeName === "AUDIO" && tc.settings.audioBoolean)
+      (node.nodeName === "AUDIO" && settings.audioBoolean)
     ) {
       if (added) {
         node.vsc = new tc.videoController(node, parent);
@@ -696,7 +591,7 @@ function initializeNow(document) {
     subtree: true,
   });
 
-  if (tc.settings.audioBoolean) {
+  if (settings.audioBoolean) {
     var mediaTags = document.querySelectorAll("video,audio");
   } else {
     var mediaTags = document.querySelectorAll("video");
@@ -722,7 +617,7 @@ function initializeNow(document) {
 function setSpeed(video, speed) {
   log("setSpeed started: " + speed, 5);
   const speedvalue = speed.toFixed(2);
-  if (tc.settings.forceLastSavedSpeed) {
+  if (settings.forceLastSavedSpeed) {
     video.dispatchEvent(
       new CustomEvent("ratechange", {
         detail: { origin: "videoSpeed", speed: speedvalue },
@@ -733,7 +628,7 @@ function setSpeed(video, speed) {
   }
   const speedIndicator = video.vsc.speedIndicator;
   speedIndicator.textContent = speedvalue;
-  tc.settings.lastSpeed = speed;
+  settings.lastSpeed = speed;
   refreshCoolDown();
   log("setSpeed finished: " + speed, 5);
 }

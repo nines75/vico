@@ -30,6 +30,10 @@
     "format:ci": "prettier . --check",
     "check": "concurrently 'pnpm build' 'pnpm compile' 'pnpm lint' 'pnpm format:ci'"
   },
+  "dependencies": {
+    "defu": "^6.1.7",
+    "type-fest": "^5.8.0"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/firefox-webext-browser": "^143.0.0",

@@ -1,29 +1,6 @@
-const regStrip = /^[\r\t\f\v ]+|[\r\t\f\v ]+$/gm;
+import { defaultSettings } from "@/utils/config";
 
-const tcDefaults = {
-  speed: 1, // default:
-  displayKeyCode: 86, // default: V
-  rememberSpeed: false, // default: false
-  audioBoolean: false, // default: false
-  startHidden: false, // default: false
-  forceLastSavedSpeed: false, //default: false
-  enabled: true, // default enabled
-  controllerOpacity: 0.3, // default: 0.3
-  keyBindings: [
-    { action: "display", key: 86, value: 0, force: false, predefined: true }, // V
-    { action: "slower", key: 83, value: 0.1, force: false, predefined: true }, // S
-    { action: "faster", key: 68, value: 0.1, force: false, predefined: true }, // D
-    { action: "rewind", key: 90, value: 10, force: false, predefined: true }, // Z
-    { action: "advance", key: 88, value: 10, force: false, predefined: true }, // X
-    { action: "reset", key: 82, value: 1, force: false, predefined: true }, // R
-    { action: "fast", key: 71, value: 1.8, force: false, predefined: true }, // G
-  ],
-  blacklist: `www.instagram.com
-    twitter.com
-    imgur.com
-    teams.microsoft.com
-  `.replaceAll(regStrip, ""),
-};
+const regStrip = /^[\r\t\f\v ]+|[\r\t\f\v ]+$/gm;
 
 let keyBindings = [];
 
@@ -266,7 +243,7 @@ function save_options() {
 
 // Restores options from browser.storage
 function restore_options() {
-  browser.storage.local.get(tcDefaults, function (storage) {
+  browser.storage.local.get(defaultSettings, function (storage) {
     document.querySelector("#rememberSpeed").checked = storage.rememberSpeed;
     document.querySelector("#forceLastSavedSpeed").checked =
       storage.forceLastSavedSpeed;
@@ -293,7 +270,7 @@ function restore_options() {
         //do predefined ones because their value needed for overlay
         // document.querySelector("#" + item["action"] + " .customDo").value = item["action"];
         if (item.action == "display" && item.key === undefined) {
-          item.key = storage.displayKeyCode || tcDefaults.displayKeyCode; // V
+          item.key = storage.displayKeyCode || defaultSettings.displayKeyCode; // V
         }
 
         if (customActionsNoValues.has(item.action))
@@ -329,7 +306,7 @@ function restore_options() {
 }
 
 function restore_defaults() {
-  browser.storage.local.set(tcDefaults, function () {
+  browser.storage.local.set(defaultSettings, function () {
     restore_options();
     document
       .querySelectorAll(".removeParent")
