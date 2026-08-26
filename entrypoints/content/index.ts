@@ -1,3 +1,101 @@
+import { defineContentScript } from "#imports";
+import "./inject.css";
+
+export default defineContentScript({
+  allFrames: true,
+  matches: ["http://*/*", "https://*/*", "file:///*"],
+  main() {
+    browser.storage.sync.get(tc.settings, function (storage) {
+      tc.settings.keyBindings = storage.keyBindings; // Array
+      if (storage.keyBindings.length === 0) {
+        // if first initialization of 0.5.3
+        // UPDATE
+        tc.settings.keyBindings.push({
+          action: "slower",
+          key: Number(storage.slowerKeyCode) || 83,
+          value: Number(storage.speedStep) || 0.1,
+          force: false,
+          predefined: true,
+        }); // default S
+        tc.settings.keyBindings.push({
+          action: "faster",
+          key: Number(storage.fasterKeyCode) || 68,
+          value: Number(storage.speedStep) || 0.1,
+          force: false,
+          predefined: true,
+        }); // default: D
+        tc.settings.keyBindings.push({
+          action: "rewind",
+          key: Number(storage.rewindKeyCode) || 90,
+          value: Number(storage.rewindTime) || 10,
+          force: false,
+          predefined: true,
+        }); // default: Z
+        tc.settings.keyBindings.push({
+          action: "advance",
+          key: Number(storage.advanceKeyCode) || 88,
+          value: Number(storage.advanceTime) || 10,
+          force: false,
+          predefined: true,
+        }); // default: X
+        tc.settings.keyBindings.push({
+          action: "reset",
+          key: Number(storage.resetKeyCode) || 82,
+          value: 1,
+          force: false,
+          predefined: true,
+        }); // default: R
+        tc.settings.keyBindings.push({
+          action: "fast",
+          key: Number(storage.fastKeyCode) || 71,
+          value: Number(storage.fastSpeed) || 1.8,
+          force: false,
+          predefined: true,
+        }); // default: G
+        tc.settings.version = "0.5.3";
+
+        browser.storage.sync.set({
+          keyBindings: tc.settings.keyBindings,
+          version: tc.settings.version,
+          displayKeyCode: tc.settings.displayKeyCode,
+          rememberSpeed: tc.settings.rememberSpeed,
+          forceLastSavedSpeed: tc.settings.forceLastSavedSpeed,
+          audioBoolean: tc.settings.audioBoolean,
+          startHidden: tc.settings.startHidden,
+          enabled: tc.settings.enabled,
+          controllerOpacity: tc.settings.controllerOpacity,
+          blacklist: tc.settings.blacklist.replaceAll(regStrip, ""),
+        });
+      }
+      tc.settings.lastSpeed = Number(storage.lastSpeed);
+      tc.settings.displayKeyCode = Number(storage.displayKeyCode);
+      tc.settings.rememberSpeed = Boolean(storage.rememberSpeed);
+      tc.settings.forceLastSavedSpeed = Boolean(storage.forceLastSavedSpeed);
+      tc.settings.audioBoolean = Boolean(storage.audioBoolean);
+      tc.settings.enabled = Boolean(storage.enabled);
+      tc.settings.startHidden = Boolean(storage.startHidden);
+      tc.settings.controllerOpacity = Number(storage.controllerOpacity);
+      tc.settings.blacklist = String(storage.blacklist);
+
+      // ensure that there is a "display" binding (for upgrades from versions that had it as a separate binding)
+      if (
+        tc.settings.keyBindings.filter((x) => x.action == "display").length ===
+        0
+      ) {
+        tc.settings.keyBindings.push({
+          action: "display",
+          key: Number(storage.displayKeyCode) || 86,
+          value: 0,
+          force: false,
+          predefined: true,
+        }); // default V
+      }
+
+      initializeWhenReady(document);
+    });
+  },
+});
+
 const regStrip = /^[\r\t\f\v ]+|[\r\t\f\v ]+$/gm;
 
 const tc = {
@@ -37,7 +135,7 @@ const tc = {
   6 - debug high verbosity + stack trace on each message
 */
 function log(message, level) {
-  verbosity = tc.settings.logLevel;
+  const verbosity = tc.settings.logLevel;
   if (level === undefined) {
     level = tc.settings.defaultLogLevel;
   }
@@ -67,94 +165,6 @@ function log(message, level) {
     }
   }
 }
-
-browser.storage.sync.get(tc.settings, function (storage) {
-  tc.settings.keyBindings = storage.keyBindings; // Array
-  if (storage.keyBindings.length === 0) {
-    // if first initialization of 0.5.3
-    // UPDATE
-    tc.settings.keyBindings.push({
-      action: "slower",
-      key: Number(storage.slowerKeyCode) || 83,
-      value: Number(storage.speedStep) || 0.1,
-      force: false,
-      predefined: true,
-    }); // default S
-    tc.settings.keyBindings.push({
-      action: "faster",
-      key: Number(storage.fasterKeyCode) || 68,
-      value: Number(storage.speedStep) || 0.1,
-      force: false,
-      predefined: true,
-    }); // default: D
-    tc.settings.keyBindings.push({
-      action: "rewind",
-      key: Number(storage.rewindKeyCode) || 90,
-      value: Number(storage.rewindTime) || 10,
-      force: false,
-      predefined: true,
-    }); // default: Z
-    tc.settings.keyBindings.push({
-      action: "advance",
-      key: Number(storage.advanceKeyCode) || 88,
-      value: Number(storage.advanceTime) || 10,
-      force: false,
-      predefined: true,
-    }); // default: X
-    tc.settings.keyBindings.push({
-      action: "reset",
-      key: Number(storage.resetKeyCode) || 82,
-      value: 1,
-      force: false,
-      predefined: true,
-    }); // default: R
-    tc.settings.keyBindings.push({
-      action: "fast",
-      key: Number(storage.fastKeyCode) || 71,
-      value: Number(storage.fastSpeed) || 1.8,
-      force: false,
-      predefined: true,
-    }); // default: G
-    tc.settings.version = "0.5.3";
-
-    browser.storage.sync.set({
-      keyBindings: tc.settings.keyBindings,
-      version: tc.settings.version,
-      displayKeyCode: tc.settings.displayKeyCode,
-      rememberSpeed: tc.settings.rememberSpeed,
-      forceLastSavedSpeed: tc.settings.forceLastSavedSpeed,
-      audioBoolean: tc.settings.audioBoolean,
-      startHidden: tc.settings.startHidden,
-      enabled: tc.settings.enabled,
-      controllerOpacity: tc.settings.controllerOpacity,
-      blacklist: tc.settings.blacklist.replaceAll(regStrip, ""),
-    });
-  }
-  tc.settings.lastSpeed = Number(storage.lastSpeed);
-  tc.settings.displayKeyCode = Number(storage.displayKeyCode);
-  tc.settings.rememberSpeed = Boolean(storage.rememberSpeed);
-  tc.settings.forceLastSavedSpeed = Boolean(storage.forceLastSavedSpeed);
-  tc.settings.audioBoolean = Boolean(storage.audioBoolean);
-  tc.settings.enabled = Boolean(storage.enabled);
-  tc.settings.startHidden = Boolean(storage.startHidden);
-  tc.settings.controllerOpacity = Number(storage.controllerOpacity);
-  tc.settings.blacklist = String(storage.blacklist);
-
-  // ensure that there is a "display" binding (for upgrades from versions that had it as a separate binding)
-  if (
-    tc.settings.keyBindings.filter((x) => x.action == "display").length === 0
-  ) {
-    tc.settings.keyBindings.push({
-      action: "display",
-      key: Number(storage.displayKeyCode) || 86,
-      value: 0,
-      force: false,
-      predefined: true,
-    }); // default V
-  }
-
-  initializeWhenReady(document);
-});
 
 function getKeyBindings(action, what = "value") {
   try {
@@ -391,12 +401,12 @@ function defineVideoController() {
 }
 
 function escapeStringRegExp(str) {
-  matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
-  return str.replace(matchOperatorsRe, String.raw`\$&`);
+  const matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
+  return str.replaceAll(matchOperatorsRe, String.raw`\$&`);
 }
 
 function isBlacklisted() {
-  blacklisted = false;
+  let blacklisted = false;
   for (let match of tc.settings.blacklist.split("\n")) {
     match = match.replaceAll(regStrip, "");
     if (match.length === 0) continue;
