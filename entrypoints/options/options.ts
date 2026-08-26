@@ -208,7 +208,7 @@ function validate() {
   return valid;
 }
 
-// Saves options to chrome.storage
+// Saves options to browser.storage
 function save_options() {
   if (!validate()) {
     return;
@@ -229,7 +229,7 @@ function save_options() {
   const controllerOpacity = document.querySelector("#controllerOpacity").value;
   const blacklist = document.querySelector("#blacklist").value;
 
-  chrome.storage.sync.remove([
+  browser.storage.sync.remove([
     "resetSpeed",
     "speedStep",
     "fastSpeed",
@@ -242,7 +242,7 @@ function save_options() {
     "advanceKeyCode",
     "fastKeyCode",
   ]);
-  chrome.storage.sync.set(
+  browser.storage.sync.set(
     {
       rememberSpeed: rememberSpeed,
       forceLastSavedSpeed: forceLastSavedSpeed,
@@ -264,9 +264,9 @@ function save_options() {
   );
 }
 
-// Restores options from chrome.storage
+// Restores options from browser.storage
 function restore_options() {
-  chrome.storage.sync.get(tcDefaults, function (storage) {
+  browser.storage.sync.get(tcDefaults, function (storage) {
     document.querySelector("#rememberSpeed").checked = storage.rememberSpeed;
     document.querySelector("#forceLastSavedSpeed").checked =
       storage.forceLastSavedSpeed;
@@ -329,7 +329,7 @@ function restore_options() {
 }
 
 function restore_defaults() {
-  chrome.storage.sync.set(tcDefaults, function () {
+  browser.storage.sync.set(tcDefaults, function () {
     restore_options();
     document
       .querySelectorAll(".removeParent")

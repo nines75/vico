@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   document.querySelector("#config").addEventListener("click", function () {
-    window.open(chrome.runtime.getURL("options.html"));
+    window.open(browser.runtime.getURL("options.html"));
   });
 
   document.querySelector("#about").addEventListener("click", function () {
@@ -19,12 +19,12 @@ document.addEventListener("DOMContentLoaded", function () {
     toggleEnabled(false, settingsSavedReloadMessage);
   });
 
-  chrome.storage.sync.get({ enabled: true }, function (storage) {
+  browser.storage.sync.get({ enabled: true }, function (storage) {
     toggleEnabledUI(storage.enabled);
   });
 
   function toggleEnabled(enabled, callback) {
-    chrome.storage.sync.set(
+    browser.storage.sync.set(
       {
         enabled: enabled,
       },
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelector("#disable").classList.toggle("hide", !enabled);
 
     const suffix = `${enabled ? "" : "_disabled"}.png`;
-    chrome.browserAction.setIcon({
+    browser.browserAction.setIcon({
       path: {
         "19": "icons/icon19" + suffix,
         "38": "icons/icon38" + suffix,

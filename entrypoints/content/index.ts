@@ -68,7 +68,7 @@ function log(message, level) {
   }
 }
 
-chrome.storage.sync.get(tc.settings, function (storage) {
+browser.storage.sync.get(tc.settings, function (storage) {
   tc.settings.keyBindings = storage.keyBindings; // Array
   if (storage.keyBindings.length === 0) {
     // if first initialization of 0.5.3
@@ -117,7 +117,7 @@ chrome.storage.sync.get(tc.settings, function (storage) {
     }); // default: G
     tc.settings.version = "0.5.3";
 
-    chrome.storage.sync.set({
+    browser.storage.sync.set({
       keyBindings: tc.settings.keyBindings,
       version: tc.settings.version,
       displayKeyCode: tc.settings.displayKeyCode,
@@ -301,7 +301,7 @@ function defineVideoController() {
     const shadow = wrapper.attachShadow({ mode: "open" });
     const shadowTemplate = `
         <style>
-          @import "${chrome.runtime.getURL("shadow.css")}";
+          @import "${browser.runtime.getURL("shadow.css")}";
         </style>
 
         <div id="controller" style="top:${top}; left:${left}; opacity:${
@@ -454,7 +454,7 @@ function setupListener() {
     log("Storing lastSpeed in settings for the rememberSpeed feature", 5);
     tc.settings.lastSpeed = speed;
     log("Syncing chrome settings for lastSpeed", 5);
-    chrome.storage.sync.set({ lastSpeed: speed }, function () {
+    browser.storage.sync.set({ lastSpeed: speed }, function () {
       log("Speed setting saved: " + speed, 5);
     });
     // show the controller for 1000ms if it's hidden.
@@ -556,7 +556,7 @@ function initializeNow(document) {
     defineVideoController();
   } else {
     const link = document.createElement("link");
-    link.href = chrome.runtime.getURL("inject.css");
+    link.href = browser.runtime.getURL("inject.css");
     link.type = "text/css";
     link.rel = "stylesheet";
     document.head.append(link);
