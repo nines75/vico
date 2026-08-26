@@ -87,14 +87,7 @@ function init(target: Document) {
         log("Processing keydown event: " + keyCode, 6);
 
         // Ignore if following modifier is active.
-        if (
-          event.getModifierState("Alt") ||
-          event.getModifierState("Control") ||
-          event.getModifierState("Fn") ||
-          event.getModifierState("Meta") ||
-          event.getModifierState("Hyper") ||
-          event.getModifierState("OS")
-        ) {
+        if (event.altKey || event.ctrlKey || event.metaKey) {
           log("Keydown event ignored due to active modifier: " + keyCode, 5);
           return;
         }
