@@ -125,10 +125,7 @@ function init(target: Document) {
 
   // recursively assign controller
   const assignController = (node: Node, parent: Node) => {
-    if (
-      node instanceof HTMLVideoElement ||
-      (node instanceof HTMLAudioElement && settings.audioBoolean)
-    ) {
+    if (node instanceof HTMLVideoElement || node instanceof HTMLAudioElement) {
       node.vsc = new tc.videoController(node, parent);
 
       return;
@@ -146,10 +143,7 @@ function init(target: Document) {
     // Only proceed with supposed removal if node is missing from DOM
     if (target.body.contains(node)) return;
 
-    if (
-      node instanceof HTMLVideoElement ||
-      (node instanceof HTMLAudioElement && settings.audioBoolean)
-    ) {
+    if (node instanceof HTMLVideoElement || node instanceof HTMLAudioElement) {
       if (node.vsc !== undefined) {
         node.vsc.remove();
       }
@@ -187,14 +181,8 @@ function init(target: Document) {
     subtree: true,
   });
 
-  if (settings.audioBoolean) {
-    var mediaTags = target.querySelectorAll("video,audio");
-  } else {
-    var mediaTags = target.querySelectorAll("video");
-  }
-
-  for (const video of mediaTags) {
-    video.vsc = new tc.videoController(video);
+  for (const media of target.querySelectorAll("video,audio")) {
+    media.vsc = new tc.videoController(media);
   }
 
   const iframes = target.querySelectorAll("iframe");

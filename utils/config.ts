@@ -6,7 +6,6 @@ export const defaultSettings: Settings = {
   lastSpeed: 1,
   displayKeyCode: 86,
   rememberSpeed: false,
-  audioBoolean: false,
   startHidden: false,
   controllerOpacity: 0.3,
   defaultLogLevel: 4,
