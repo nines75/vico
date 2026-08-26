@@ -5,7 +5,7 @@ export default defineContentScript({
   allFrames: true,
   matches: ["http://*/*", "https://*/*", "file:///*"],
   main() {
-    browser.storage.sync.get(tc.settings, function (storage) {
+    browser.storage.local.get(tc.settings, function (storage) {
       tc.settings.keyBindings = storage.keyBindings; // Array
       if (storage.keyBindings.length === 0) {
         // if first initialization of 0.5.3
@@ -54,7 +54,7 @@ export default defineContentScript({
         }); // default: G
         tc.settings.version = "0.5.3";
 
-        browser.storage.sync.set({
+        browser.storage.local.set({
           keyBindings: tc.settings.keyBindings,
           version: tc.settings.version,
           displayKeyCode: tc.settings.displayKeyCode,
@@ -464,7 +464,7 @@ function setupListener() {
     log("Storing lastSpeed in settings for the rememberSpeed feature", 5);
     tc.settings.lastSpeed = speed;
     log("Syncing chrome settings for lastSpeed", 5);
-    browser.storage.sync.set({ lastSpeed: speed }, function () {
+    browser.storage.local.set({ lastSpeed: speed }, function () {
       log("Speed setting saved: " + speed, 5);
     });
     // show the controller for 1000ms if it's hidden.
