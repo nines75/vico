@@ -549,25 +549,6 @@ function refreshCoolDown() {
   log("End refreshCoolDown", 5);
 }
 
-function getShadow(parent) {
-  const result = [];
-  function getChild(parent) {
-    if (!parent.firstElementChild) return;
-
-    let child = parent.firstElementChild;
-    do {
-      result.push(child);
-      getChild(child);
-      if (child.shadowRoot) {
-        result.push(getShadow(child.shadowRoot));
-      }
-      child = child.nextElementSibling;
-    } while (child);
-  }
-  getChild(parent);
-  return result.flat(Infinity);
-}
-
 function setSpeed(video, speed) {
   log("setSpeed started: " + speed, 5);
 
