@@ -29,7 +29,7 @@ last point to listen to it a few more times.
 
 ![Player](https://cloud.githubusercontent.com/assets/2400185/24076745/5723e6ae-0c41-11e7-820c-1d8e814a2888.png)
 
-#### *Install [Chrome](https://chrome.google.com/webstore/detail/video-speed-controller/nffaoalbilbmmfgbnbgppjihopabppdk) or [Firefox](https://addons.mozilla.org/en-us/firefox/addon/videospeed/) Extension*
+#### _Install [Chrome](https://chrome.google.com/webstore/detail/video-speed-controller/nffaoalbilbmmfgbnbgppjihopabppdk) or [Firefox](https://addons.mozilla.org/en-us/firefox/addon/videospeed/) Extension_
 
 \*\* Once the extension is installed simply navigate to any page that offers
 HTML5 video ([example](http://www.youtube.com/watch?v=E9FxNzv1Tr8)), and you'll
@@ -72,8 +72,8 @@ You can try manually disabling Flash from the browser.
 
 **What is this fork of `igrigorik/videospeed` all about?** This fork of the
 [`igrigorik/videospeed`](https://github.com/igrigorik/videospeed) repository
-is a port of [`igrigorik`](https://github.com/igrigorik)'s videospeed Chrome 
-add-on for Firefox. This fork modifies the Chrome add-on code so that it works 
+is a port of [`igrigorik`](https://github.com/igrigorik)'s videospeed Chrome
+add-on for Firefox. This fork modifies the Chrome add-on code so that it works
 in Firefox. This repo is the code behind the [Firefox Extension](https://addons.mozilla.org/en-us/firefox/addon/videospeed/)
 whereas the [`igrigorik/videospeed`](https://github.com/igrigorik/videospeed)
 repository contains the code behind the [Chrome Extension](https://chrome.google.com/webstore/detail/video-speed-controller/nffaoalbilbmmfgbnbgppjihopabppdk).
