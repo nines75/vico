@@ -16,8 +16,6 @@ export default defineContentScript({
   },
 });
 
-const regStrip = /^[\r\t\f\v ]+|[\r\t\f\v ]+$/gm;
-
 const tc = {
   // Holds a reference to all of the AUDIO/VIDEO DOM elements we've attached to
   mediaElements: [],
@@ -509,32 +507,34 @@ function defineVideoController() {
   };
 }
 
-function escapeStringRegExp(str) {
-  const matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
-  return str.replaceAll(matchOperatorsRe, String.raw`\$&`);
-}
-
 function isBlacklisted() {
-  let blacklisted = false;
-  for (let match of settings.blacklist.split("\n")) {
-    match = match.replaceAll(regStrip, "");
-    if (match.length === 0) continue;
+  for (const line of settings.blacklist.split("\n")) {
+    if (line === "") continue;
 
-    if (match.startsWith("/")) {
+    const results = /^\/(.*)\/([^/]*)$/.exec(line);
+
+    const regexStr = results?.[1];
+    const flags = results?.[2];
+
+    let regex: RegExp | undefined;
+    if (regexStr !== undefined && flags !== undefined) {
+      if (!/^[isuvm]*$/.test(flags)) continue;
+
       try {
-        var regexp = new RegExp(match);
+        regex = new RegExp(regexStr, flags);
       } catch {
         continue;
       }
-    } else {
-      var regexp = new RegExp(escapeStringRegExp(match));
     }
 
-    if (regexp.test(location.href)) {
-      blacklisted = true;
+    if (regex === undefined) {
+      if (line === location.hostname) return true;
+    } else {
+      if (regex.test(location.href)) return true;
     }
   }
-  return blacklisted;
+
+  return false;
 }
 
 let coolDown = false;
