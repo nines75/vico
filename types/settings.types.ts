@@ -12,11 +12,11 @@ export interface Settings {
   logLevel: number;
   keyBindings: Record<
     "display" | "slower" | "faster" | "rewind" | "advance" | "reset" | "fast",
-    Keybinding
+    KeyBinding
   >;
 }
 
-interface Keybinding {
+interface KeyBinding {
   action: string;
   key: number;
   value: number;
