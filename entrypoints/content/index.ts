@@ -12,7 +12,7 @@ export default defineContentScript({
     // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
     settings = await loadSettings();
 
-    initializeWhenReady(document);
+    initializeHandler(document);
   },
 });
 
@@ -397,27 +397,30 @@ function setupListener() {
   );
 }
 
-function initializeWhenReady(document) {
+function initializeHandler(targetDocument: Document) {
   log("Begin initializeWhenReady", 5);
+
   if (isBlacklisted()) {
     return;
   }
+
   window.addEventListener("load", () => {
-    initializeNow(globalThis.document);
+    initialize(globalThis.document);
   });
-  if (document) {
-    if (document.readyState === "complete") {
-      initializeNow(document);
-    } else {
-      document.addEventListener("readystatechange", () => {
-        if (document.readyState === "complete") {
-          initializeNow(document);
-        }
-      });
-    }
+
+  if (targetDocument.readyState === "complete") {
+    initialize(targetDocument);
+  } else {
+    targetDocument.addEventListener("readystatechange", () => {
+      if (targetDocument.readyState === "complete") {
+        initialize(targetDocument);
+      }
+    });
   }
+
   log("End initializeWhenReady", 5);
 }
+
 function inIframe() {
   try {
     return globalThis.self !== window.top;
@@ -444,7 +447,7 @@ function getShadow(parent) {
   return result.flat(Infinity);
 }
 
-function initializeNow(document) {
+function initialize(document) {
   log("Begin initializeNow", 5);
   if (!settings.enabled) return;
   // enforce init-once due to redundant callers
@@ -609,7 +612,7 @@ function initializeNow(document) {
     } catch {
       return;
     }
-    initializeWhenReady(childDocument);
+    initializeHandler(childDocument);
   });
   log("End initializeNow", 5);
 }
