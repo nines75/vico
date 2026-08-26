@@ -197,9 +197,6 @@ function save_options() {
   // Remove added shortcuts
 
   const rememberSpeed = document.querySelector("#rememberSpeed").checked;
-  const forceLastSavedSpeed = document.querySelector(
-    "#forceLastSavedSpeed",
-  ).checked;
   const audioBoolean = document.querySelector("#audioBoolean").checked;
   const enabled = document.querySelector("#enabled").checked;
   const startHidden = document.querySelector("#startHidden").checked;
@@ -222,7 +219,6 @@ function save_options() {
   browser.storage.local.set(
     {
       rememberSpeed: rememberSpeed,
-      forceLastSavedSpeed: forceLastSavedSpeed,
       audioBoolean: audioBoolean,
       enabled: enabled,
       startHidden: startHidden,
@@ -245,8 +241,6 @@ function save_options() {
 function restore_options() {
   browser.storage.local.get(defaultSettings, function (storage) {
     document.querySelector("#rememberSpeed").checked = storage.rememberSpeed;
-    document.querySelector("#forceLastSavedSpeed").checked =
-      storage.forceLastSavedSpeed;
     document.querySelector("#audioBoolean").checked = storage.audioBoolean;
     document.querySelector("#enabled").checked = storage.enabled;
     document.querySelector("#startHidden").checked = storage.startHidden;

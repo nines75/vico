@@ -4,7 +4,6 @@ export interface Settings {
   lastSpeed: number;
   displayKeyCode: number;
   rememberSpeed: boolean;
-  forceLastSavedSpeed: boolean;
   audioBoolean: boolean;
   startHidden: boolean;
   controllerOpacity: number;

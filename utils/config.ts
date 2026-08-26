@@ -8,7 +8,6 @@ export const defaultSettings: Settings = {
   rememberSpeed: false,
   audioBoolean: false,
   startHidden: false,
-  forceLastSavedSpeed: false,
   controllerOpacity: 0.3,
   defaultLogLevel: 4,
   logLevel: 3,

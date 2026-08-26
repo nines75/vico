@@ -265,21 +265,7 @@ function setupListener() {
 
       const video = event.target;
 
-      /**
-       * If the last speed is forced, only update the speed based on events created by
-       * video speed instead of all video speed change events.
-       */
-      if (settings.forceLastSavedSpeed) {
-        if (event.detail && event.detail.origin === "videoSpeed") {
-          video.playbackRate = event.detail.speed;
-          updateSpeedFromEvent(video);
-        } else {
-          video.playbackRate = settings.lastSpeed;
-        }
-        event.stopImmediatePropagation();
-      } else {
-        updateSpeedFromEvent(video);
-      }
+      updateSpeedFromEvent(video);
     },
     { capture: true },
   );
@@ -622,16 +608,10 @@ function getShadow(parent) {
 
 function setSpeed(video, speed) {
   log("setSpeed started: " + speed, 5);
+
   const speedvalue = speed.toFixed(2);
-  if (settings.forceLastSavedSpeed) {
-    video.dispatchEvent(
-      new CustomEvent("ratechange", {
-        detail: { origin: "videoSpeed", speed: speedvalue },
-      }),
-    );
-  } else {
-    video.playbackRate = Number(speedvalue);
-  }
+  video.playbackRate = Number(speedvalue);
+
   const speedIndicator = video.vsc.speedIndicator;
   speedIndicator.textContent = speedvalue;
   settings.lastSpeed = speed;
