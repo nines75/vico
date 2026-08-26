@@ -1,6 +1,6 @@
-.DS_Store
-local
+/node_modules
+/.vscode
 
-# IntelliJ IDEA
-.idea/
-node_modules
+# WXT
+/.wxt
+/.output

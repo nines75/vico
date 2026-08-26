@@ -1,0 +1,12 @@
+# https://pnpm.io/supply-chain-security
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: false # https://github.com/unrs/unrs-resolver/issues/193
+update:
+  githubActions: true
+minimumReleaseAge: 4320 # 3 days
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 144000 # 100 days
+engineStrict: true
