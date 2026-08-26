@@ -167,30 +167,15 @@ function init(target: Document) {
   const observer = new MutationObserver((mutations) => {
     // Process the DOM nodes lazily
     requestIdleCallback(
-      (_) => {
+      () => {
         for (const mutation of mutations) {
-          if (mutation.type === "childList") {
-            for (const node of mutation.addedNodes) {
-              assignController(node, node.parentNode ?? mutation.target);
-            }
-            for (const node of mutation.removedNodes) {
-              unassignController(node, node.parentNode ?? mutation.target);
-            }
+          if (mutation.type !== "childList") continue;
 
-            continue;
+          for (const node of mutation.addedNodes) {
+            assignController(node, node.parentNode ?? mutation.target);
           }
-
-          if (
-            mutation.type === "attributes" &&
-            mutation.target.attributes["aria-hidden"] &&
-            mutation.target.attributes["aria-hidden"].value == "false"
-          ) {
-            const flattenedNodes = getShadow(target.body);
-            const node = flattenedNodes.find((x) => x.tagName == "VIDEO");
-            if (node) {
-              if (node.vsc) node.vsc.remove();
-              assignController(node, node.parentNode ?? mutation.target);
-            }
+          for (const node of mutation.removedNodes) {
+            unassignController(node, node.parentNode ?? mutation.target);
           }
         }
       },
@@ -198,7 +183,6 @@ function init(target: Document) {
     );
   });
   observer.observe(target, {
-    attributeFilter: ["aria-hidden"],
     childList: true,
     subtree: true,
   });
