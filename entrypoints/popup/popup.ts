@@ -26,12 +26,12 @@ document.addEventListener("DOMContentLoaded", function () {
   function toggleEnabled(enabled, callback) {
     chrome.storage.sync.set(
       {
-        enabled: enabled
+        enabled: enabled,
       },
       function () {
         toggleEnabledUI(enabled);
         if (callback) callback(enabled);
-      }
+      },
     );
   }
 
@@ -44,14 +44,14 @@ document.addEventListener("DOMContentLoaded", function () {
       path: {
         "19": "icons/icon19" + suffix,
         "38": "icons/icon38" + suffix,
-        "48": "icons/icon48" + suffix
-      }
+        "48": "icons/icon48" + suffix,
+      },
     });
   }
 
   function settingsSavedReloadMessage(enabled) {
     setStatusMessage(
-      `${enabled ? "Enabled" : "Disabled"}. Reload page to see changes`
+      `${enabled ? "Enabled" : "Disabled"}. Reload page to see changes`,
     );
   }
 
