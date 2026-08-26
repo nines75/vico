@@ -279,16 +279,12 @@ function log(message, level) {
   }
 }
 
-function getKeyBindings(action, what = "value") {
-  try {
-    return settings.keyBindings.find((item) => item.action === action)[what];
-  } catch {
-    return false;
-  }
+function getKeyBindings(action: keyof Settings["keyBindings"]) {
+  return settings.keyBindings[action].value;
 }
 
-function setKeyBindings(action, value) {
-  settings.keyBindings.find((item) => item.action === action).value = value;
+function setKeyBindings(action: keyof Settings["keyBindings"], value: number) {
+  settings.keyBindings[action].value = value;
 }
 
 function defineVideoController() {
