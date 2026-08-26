@@ -474,35 +474,11 @@ function defineVideoController() {
     const fragment = document.createDocumentFragment();
     fragment.append(wrapper);
 
-    switch (true) {
-      case location.hostname == "www.amazon.com":
-      case location.hostname == "www.reddit.com":
-      case location.hostname.includes("hbogo."): {
-        // insert before parent to bypass overlay
-        this.parent.parentElement.insertBefore(fragment, this.parent);
-        break;
-      }
-      case location.hostname == "www.facebook.com": {
-        // this is a monstrosity but new FB design does not have *any*
-        // semantic handles for us to traverse the tree, and deep nesting
-        // that we need to bubble up from to get controller to stack correctly
-        const p =
-          this.parent.parentElement.parentElement.parentElement.parentElement
-            .parentElement.parentElement.parentElement;
-        p.insertBefore(fragment, p.firstChild);
-        break;
-      }
-      case location.hostname == "tv.apple.com": {
-        // insert after parent for correct stacking context
-        this.parent.getRootNode().querySelector(".scrim").prepend(fragment);
-      }
-      default: {
-        // Note: when triggered via a MutationRecord, it's possible that the
-        // target is not the immediate parent. This appends the controller as
-        // the first element of the target, which may not be the parent.
-        this.parent.insertBefore(fragment, this.parent.firstChild);
-      }
-    }
+    // Note: when triggered via a MutationRecord, it's possible that the
+    // target is not the immediate parent. This appends the controller as
+    // the first element of the target, which may not be the parent.
+    this.parent.insertBefore(fragment, this.parent.firstChild);
+
     return wrapper;
   };
 }
