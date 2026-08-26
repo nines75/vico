@@ -12,7 +12,7 @@ export default defineContentScript({
     // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
     settings = await loadSettings();
 
-    initializeHandler(document);
+    initHandler(document);
   },
 });
 
@@ -22,6 +22,270 @@ const tc = {
   // Holds a reference to all of the AUDIO/VIDEO DOM elements we've attached to
   mediaElements: [],
 };
+
+// -------------------------------------------------------------------------------------------
+// initializer
+// -------------------------------------------------------------------------------------------
+
+function initHandler(target: Document) {
+  log("Begin initializeWhenReady", 5);
+
+  if (isBlacklisted()) {
+    return;
+  }
+
+  window.addEventListener("load", () => {
+    init(globalThis.document);
+  });
+
+  if (target.readyState === "complete") {
+    init(target);
+  } else {
+    target.addEventListener("readystatechange", () => {
+      if (target.readyState === "complete") {
+        init(target);
+      }
+    });
+  }
+
+  log("End initializeWhenReady", 5);
+}
+
+function init(target: Document) {
+  log("Begin initializeNow", 5);
+
+  if (!settings.enabled || target.body.classList.contains("vsc-initialized"))
+    return;
+
+  setupListener();
+
+  target.body.classList.add("vsc-initialized");
+  log("initializeNow: vsc-initialized added to document body", 5);
+
+  if (target === globalThis.document) {
+    defineVideoController();
+  } else {
+    const link = target.createElement("link");
+    link.href = browser.runtime.getURL("inject.css");
+    link.type = "text/css";
+    link.rel = "stylesheet";
+
+    target.head.append(link);
+  }
+
+  const docs = [target];
+
+  // if iframe
+  if (globalThis.self !== window.top && window.top !== null)
+    docs.push(window.top.document);
+
+  for (const doc of docs) {
+    doc.addEventListener(
+      "keydown",
+      (event) => {
+        const keyCode = event.keyCode;
+        log("Processing keydown event: " + keyCode, 6);
+
+        // Ignore if following modifier is active.
+        if (
+          event.getModifierState("Alt") ||
+          event.getModifierState("Control") ||
+          event.getModifierState("Fn") ||
+          event.getModifierState("Meta") ||
+          event.getModifierState("Hyper") ||
+          event.getModifierState("OS")
+        ) {
+          log("Keydown event ignored due to active modifier: " + keyCode, 5);
+          return;
+        }
+
+        // Ignore keydown event if typing in an input box
+        if (
+          event.target.nodeName === "INPUT" ||
+          event.target.nodeName === "TEXTAREA" ||
+          event.target.isContentEditable
+        ) {
+          return false;
+        }
+
+        // Ignore keydown event if typing in a page without vsc
+        if (tc.mediaElements.length === 0) {
+          return false;
+        }
+
+        const item = settings.keyBindings.find((item) => item.key === keyCode);
+        if (item) {
+          runAction(item.action, item.value);
+          if (item.force === "true") {
+            // disable websites key bindings
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }
+
+        return false;
+      },
+      { capture: true },
+    );
+  }
+
+  function checkForVideo(node, parent, added) {
+    // Only proceed with supposed removal if node is missing from DOM
+    if (!added && target.body.contains(node)) {
+      return;
+    }
+    if (
+      node.nodeName === "VIDEO" ||
+      (node.nodeName === "AUDIO" && settings.audioBoolean)
+    ) {
+      if (added) {
+        node.vsc = new tc.videoController(node, parent);
+      } else {
+        if (node.vsc) {
+          node.vsc.remove();
+        }
+      }
+    } else if (node.children != undefined) {
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+        checkForVideo(child, child.parentNode || parent, added);
+      }
+    }
+  }
+
+  const observer = new MutationObserver(function (mutations) {
+    // Process the DOM nodes lazily
+    requestIdleCallback(
+      (_) => {
+        for (const mutation of mutations) {
+          switch (mutation.type) {
+            case "childList": {
+              mutation.addedNodes.forEach(function (node) {
+                if (typeof node === "function") return;
+                checkForVideo(node, node.parentNode || mutation.target, true);
+              });
+              mutation.removedNodes.forEach(function (node) {
+                if (typeof node === "function") return;
+                checkForVideo(node, node.parentNode || mutation.target, false);
+              });
+              break;
+            }
+            case "attributes": {
+              if (
+                mutation.target.attributes["aria-hidden"] &&
+                mutation.target.attributes["aria-hidden"].value == "false"
+              ) {
+                const flattenedNodes = getShadow(target.body);
+                const node = flattenedNodes.find((x) => x.tagName == "VIDEO");
+                if (node) {
+                  if (node.vsc) node.vsc.remove();
+                  checkForVideo(node, node.parentNode || mutation.target, true);
+                }
+              }
+              break;
+            }
+          }
+        }
+      },
+      { timeout: 1000 },
+    );
+  });
+  observer.observe(target, {
+    attributeFilter: ["aria-hidden"],
+    childList: true,
+    subtree: true,
+  });
+
+  if (settings.audioBoolean) {
+    var mediaTags = target.querySelectorAll("video,audio");
+  } else {
+    var mediaTags = target.querySelectorAll("video");
+  }
+
+  mediaTags.forEach(function (video) {
+    video.vsc = new tc.videoController(video);
+  });
+
+  const frameTags = target.querySelectorAll("iframe");
+  Array.prototype.forEach.call(frameTags, function (frame) {
+    // Ignore frames we don't have permission to access (different origin).
+    try {
+      var childDocument = frame.contentDocument;
+    } catch {
+      return;
+    }
+    initHandler(childDocument);
+  });
+
+  log("End initializeNow", 5);
+}
+
+function setupListener() {
+  /**
+   * This function is run whenever a video speed rate change occurs.
+   * It is used to update the speed that shows up in the display as well as save
+   * that latest speed into the local storage.
+   *
+   * @param {*} video The video element to update the speed indicators for.
+   */
+  const updateSpeedFromEvent = (video: HTMLVideoElement) => {
+    // It's possible to get a rate change on a VIDEO/AUDIO that doesn't have
+    // a video controller attached to it.  If we do, ignore it.
+    if (!video.vsc) return;
+
+    const speedIndicator = video.vsc.speedIndicator;
+    const src = video.currentSrc;
+    const speed = Number(video.playbackRate.toFixed(2));
+
+    log("Playback rate changed to " + speed, 4);
+
+    log("Updating controller with new speed", 5);
+    speedIndicator.textContent = speed.toFixed(2);
+    settings.speeds[src] = speed;
+
+    log("Storing lastSpeed in settings for the rememberSpeed feature", 5);
+    settings.lastSpeed = speed;
+
+    log("Syncing chrome settings for lastSpeed", 5);
+    browser.storage.local.set({ lastSpeed: speed }, () => {
+      log("Speed setting saved: " + speed, 5);
+    });
+
+    // show the controller for 1000ms if it's hidden.
+    runAction("blink", null, null);
+  };
+
+  document.addEventListener(
+    "ratechange",
+    (event) => {
+      if (coolDown) {
+        log("Speed event propagation blocked", 4);
+        event.stopImmediatePropagation();
+      }
+
+      const video = event.target;
+
+      /**
+       * If the last speed is forced, only update the speed based on events created by
+       * video speed instead of all video speed change events.
+       */
+      if (settings.forceLastSavedSpeed) {
+        if (event.detail && event.detail.origin === "videoSpeed") {
+          video.playbackRate = event.detail.speed;
+          updateSpeedFromEvent(video);
+        } else {
+          video.playbackRate = settings.lastSpeed;
+        }
+        event.stopImmediatePropagation();
+      } else {
+        updateSpeedFromEvent(video);
+      }
+    },
+    { capture: true },
+  );
+}
+
+// -------------------------------------------------------------------------------------------
 
 /* Log levels (depends on caller specifying the correct level)
   1 - none
@@ -337,97 +601,6 @@ function refreshCoolDown() {
   log("End refreshCoolDown", 5);
 }
 
-function setupListener() {
-  /**
-   * This function is run whenever a video speed rate change occurs.
-   * It is used to update the speed that shows up in the display as well as save
-   * that latest speed into the local storage.
-   *
-   * @param {*} video The video element to update the speed indicators for.
-   */
-  function updateSpeedFromEvent(video) {
-    // It's possible to get a rate change on a VIDEO/AUDIO that doesn't have
-    // a video controller attached to it.  If we do, ignore it.
-    if (!video.vsc) return;
-    const speedIndicator = video.vsc.speedIndicator;
-    const src = video.currentSrc;
-    const speed = Number(video.playbackRate.toFixed(2));
-
-    log("Playback rate changed to " + speed, 4);
-
-    log("Updating controller with new speed", 5);
-    speedIndicator.textContent = speed.toFixed(2);
-    settings.speeds[src] = speed;
-    log("Storing lastSpeed in settings for the rememberSpeed feature", 5);
-    settings.lastSpeed = speed;
-    log("Syncing chrome settings for lastSpeed", 5);
-    browser.storage.local.set({ lastSpeed: speed }, function () {
-      log("Speed setting saved: " + speed, 5);
-    });
-    // show the controller for 1000ms if it's hidden.
-    runAction("blink", null, null);
-  }
-
-  document.addEventListener(
-    "ratechange",
-    function (event) {
-      if (coolDown) {
-        log("Speed event propagation blocked", 4);
-        event.stopImmediatePropagation();
-      }
-      const video = event.target;
-
-      /**
-       * If the last speed is forced, only update the speed based on events created by
-       * video speed instead of all video speed change events.
-       */
-      if (settings.forceLastSavedSpeed) {
-        if (event.detail && event.detail.origin === "videoSpeed") {
-          video.playbackRate = event.detail.speed;
-          updateSpeedFromEvent(video);
-        } else {
-          video.playbackRate = settings.lastSpeed;
-        }
-        event.stopImmediatePropagation();
-      } else {
-        updateSpeedFromEvent(video);
-      }
-    },
-    { capture: true },
-  );
-}
-
-function initializeHandler(targetDocument: Document) {
-  log("Begin initializeWhenReady", 5);
-
-  if (isBlacklisted()) {
-    return;
-  }
-
-  window.addEventListener("load", () => {
-    initialize(globalThis.document);
-  });
-
-  if (targetDocument.readyState === "complete") {
-    initialize(targetDocument);
-  } else {
-    targetDocument.addEventListener("readystatechange", () => {
-      if (targetDocument.readyState === "complete") {
-        initialize(targetDocument);
-      }
-    });
-  }
-
-  log("End initializeWhenReady", 5);
-}
-
-function inIframe() {
-  try {
-    return globalThis.self !== window.top;
-  } catch {
-    return true;
-  }
-}
 function getShadow(parent) {
   const result = [];
   function getChild(parent) {
@@ -445,176 +618,6 @@ function getShadow(parent) {
   }
   getChild(parent);
   return result.flat(Infinity);
-}
-
-function initialize(document) {
-  log("Begin initializeNow", 5);
-  if (!settings.enabled) return;
-  // enforce init-once due to redundant callers
-  if (!document.body || document.body.classList.contains("vsc-initialized")) {
-    return;
-  }
-  try {
-    setupListener();
-  } catch {
-    // no operation
-  }
-  document.body.classList.add("vsc-initialized");
-  log("initializeNow: vsc-initialized added to document body", 5);
-
-  if (document === globalThis.document) {
-    defineVideoController();
-  } else {
-    const link = document.createElement("link");
-    link.href = browser.runtime.getURL("inject.css");
-    link.type = "text/css";
-    link.rel = "stylesheet";
-    document.head.append(link);
-  }
-  const docs = new Array(document);
-  try {
-    if (inIframe()) docs.push(window.top.document);
-  } catch {}
-
-  for (const doc of docs) {
-    doc.addEventListener(
-      "keydown",
-      function (event) {
-        const keyCode = event.keyCode;
-        log("Processing keydown event: " + keyCode, 6);
-
-        // Ignore if following modifier is active.
-        if (
-          !event.getModifierState ||
-          event.getModifierState("Alt") ||
-          event.getModifierState("Control") ||
-          event.getModifierState("Fn") ||
-          event.getModifierState("Meta") ||
-          event.getModifierState("Hyper") ||
-          event.getModifierState("OS")
-        ) {
-          log("Keydown event ignored due to active modifier: " + keyCode, 5);
-          return;
-        }
-
-        // Ignore keydown event if typing in an input box
-        if (
-          event.target.nodeName === "INPUT" ||
-          event.target.nodeName === "TEXTAREA" ||
-          event.target.isContentEditable
-        ) {
-          return false;
-        }
-
-        // Ignore keydown event if typing in a page without vsc
-        if (tc.mediaElements.length === 0) {
-          return false;
-        }
-
-        const item = settings.keyBindings.find((item) => item.key === keyCode);
-        if (item) {
-          runAction(item.action, item.value);
-          if (item.force === "true") {
-            // disable websites key bindings
-            event.preventDefault();
-            event.stopPropagation();
-          }
-        }
-
-        return false;
-      },
-      { capture: true },
-    );
-  }
-
-  function checkForVideo(node, parent, added) {
-    // Only proceed with supposed removal if node is missing from DOM
-    if (!added && document.body.contains(node)) {
-      return;
-    }
-    if (
-      node.nodeName === "VIDEO" ||
-      (node.nodeName === "AUDIO" && settings.audioBoolean)
-    ) {
-      if (added) {
-        node.vsc = new tc.videoController(node, parent);
-      } else {
-        if (node.vsc) {
-          node.vsc.remove();
-        }
-      }
-    } else if (node.children != undefined) {
-      for (let i = 0; i < node.children.length; i++) {
-        const child = node.children[i];
-        checkForVideo(child, child.parentNode || parent, added);
-      }
-    }
-  }
-
-  const observer = new MutationObserver(function (mutations) {
-    // Process the DOM nodes lazily
-    requestIdleCallback(
-      (_) => {
-        for (const mutation of mutations) {
-          switch (mutation.type) {
-            case "childList": {
-              mutation.addedNodes.forEach(function (node) {
-                if (typeof node === "function") return;
-                checkForVideo(node, node.parentNode || mutation.target, true);
-              });
-              mutation.removedNodes.forEach(function (node) {
-                if (typeof node === "function") return;
-                checkForVideo(node, node.parentNode || mutation.target, false);
-              });
-              break;
-            }
-            case "attributes": {
-              if (
-                mutation.target.attributes["aria-hidden"] &&
-                mutation.target.attributes["aria-hidden"].value == "false"
-              ) {
-                const flattenedNodes = getShadow(document.body);
-                const node = flattenedNodes.find((x) => x.tagName == "VIDEO");
-                if (node) {
-                  if (node.vsc) node.vsc.remove();
-                  checkForVideo(node, node.parentNode || mutation.target, true);
-                }
-              }
-              break;
-            }
-          }
-        }
-      },
-      { timeout: 1000 },
-    );
-  });
-  observer.observe(document, {
-    attributeFilter: ["aria-hidden"],
-    childList: true,
-    subtree: true,
-  });
-
-  if (settings.audioBoolean) {
-    var mediaTags = document.querySelectorAll("video,audio");
-  } else {
-    var mediaTags = document.querySelectorAll("video");
-  }
-
-  mediaTags.forEach(function (video) {
-    video.vsc = new tc.videoController(video);
-  });
-
-  const frameTags = document.querySelectorAll("iframe");
-  Array.prototype.forEach.call(frameTags, function (frame) {
-    // Ignore frames we don't have permission to access (different origin).
-    try {
-      var childDocument = frame.contentDocument;
-    } catch {
-      return;
-    }
-    initializeHandler(childDocument);
-  });
-  log("End initializeNow", 5);
 }
 
 function setSpeed(video, speed) {
