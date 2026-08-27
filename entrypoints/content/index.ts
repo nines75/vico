@@ -286,23 +286,6 @@ export class Controller {
     this.gui = this.createGui(parent);
 
     mediaElements.push(media);
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type !== "attributes") continue;
-
-        log("mutation of A/V element", 5);
-
-        const target = mutation.target;
-        if (!(target instanceof HTMLMediaElement)) continue;
-
-        this.gui.classList.toggle(
-          "vsc-nosource",
-          target.src === "" && target.currentSrc === "",
-        );
-      }
-    });
-    observer.observe(media, { attributeFilter: ["src", "currentSrc"] });
   }
 
   remove() {
