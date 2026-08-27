@@ -482,86 +482,86 @@ function runAction(
       log("Hiding controller", 5);
     }, 2000);
 
-    if (!media.classList.contains("vsc-cancelled")) {
-      switch (params.action) {
-        case "rewind": {
-          log("Rewind", 5);
-          media.currentTime -= params.value;
+    if (media.classList.contains("vsc-cancelled")) continue;
 
-          break;
+    switch (params.action) {
+      case "rewind": {
+        log("Rewind", 5);
+        media.currentTime -= params.value;
+
+        break;
+      }
+      case "advance": {
+        log("Fast forward", 5);
+        media.currentTime += params.value;
+
+        break;
+      }
+      case "faster": {
+        log("Increase speed", 5);
+
+        // min rate is 16
+        const speed = Math.min(
+          (media.playbackRate < 0.1 ? 0 : media.playbackRate) + params.value,
+          16,
+        );
+        setSpeed(media, speed);
+
+        break;
+      }
+      case "slower": {
+        log("Decrease speed", 5);
+
+        // min rate is 0.0625
+        const speed = Math.max(media.playbackRate - params.value, 0.07);
+        setSpeed(media, speed);
+
+        break;
+      }
+      case "reset": {
+        log("Reset speed", 5);
+        resetSpeed(media, 1);
+
+        break;
+      }
+      case "display": {
+        log("Showing controller", 5);
+        gui.classList.add("vsc-manual");
+        gui.classList.toggle("vsc-hidden");
+
+        break;
+      }
+      case "blink": {
+        log("Showing controller momentarily", 5);
+
+        if (media.vsc === undefined) break;
+
+        // if vsc is hidden, show it briefly to give the use visual feedback that the action is excuted.
+        if (
+          gui.classList.contains("vsc-hidden") ||
+          media.vsc.blinkTimeOut !== undefined
+        ) {
+          clearTimeout(media.vsc.blinkTimeOut);
+          gui.classList.remove("vsc-hidden");
+
+          media.vsc.blinkTimeOut = setTimeout(() => {
+            gui.classList.add("vsc-hidden");
+
+            if (media.vsc !== undefined) media.vsc.blinkTimeOut = undefined;
+          }, 1000);
         }
-        case "advance": {
-          log("Fast forward", 5);
-          media.currentTime += params.value;
 
-          break;
-        }
-        case "faster": {
-          log("Increase speed", 5);
+        break;
+      }
+      case "drag": {
+        handleDrag(media, params.event);
 
-          // min rate is 16
-          const speed = Math.min(
-            (media.playbackRate < 0.1 ? 0 : media.playbackRate) + params.value,
-            16,
-          );
-          setSpeed(media, speed);
+        break;
+      }
+      case "fast": {
+        resetSpeed(media, params.value);
 
-          break;
-        }
-        case "slower": {
-          log("Decrease speed", 5);
-
-          // min rate is 0.0625
-          const speed = Math.max(media.playbackRate - params.value, 0.07);
-          setSpeed(media, speed);
-
-          break;
-        }
-        case "reset": {
-          log("Reset speed", 5);
-          resetSpeed(media, 1);
-
-          break;
-        }
-        case "display": {
-          log("Showing controller", 5);
-          gui.classList.add("vsc-manual");
-          gui.classList.toggle("vsc-hidden");
-
-          break;
-        }
-        case "blink": {
-          log("Showing controller momentarily", 5);
-
-          if (media.vsc === undefined) break;
-
-          // if vsc is hidden, show it briefly to give the use visual feedback that the action is excuted.
-          if (
-            gui.classList.contains("vsc-hidden") ||
-            media.vsc.blinkTimeOut !== undefined
-          ) {
-            clearTimeout(media.vsc.blinkTimeOut);
-            gui.classList.remove("vsc-hidden");
-
-            media.vsc.blinkTimeOut = setTimeout(() => {
-              gui.classList.add("vsc-hidden");
-
-              if (media.vsc !== undefined) media.vsc.blinkTimeOut = undefined;
-            }, 1000);
-          }
-
-          break;
-        }
-        case "drag": {
-          handleDrag(media, params.event);
-
-          break;
-        }
-        case "fast": {
-          resetSpeed(media, params.value);
-
-          break;
-        }
+        break;
       }
     }
   }
