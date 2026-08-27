@@ -24,6 +24,9 @@ export default defineConfig({
 
     return {
       permissions: ["notifications", "storage"],
+      web_accessible_resources: [
+        { resources: ["assets/inject.css", "assets/shadow.css"] },
+      ],
       commands: {
         "open-settings": {
           description: "open settings",

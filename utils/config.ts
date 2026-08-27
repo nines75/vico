@@ -7,7 +7,7 @@ export const defaultSettings: Settings = {
   startHidden: false,
   controllerOpacity: 0.3,
   defaultLogLevel: 4,
-  logLevel: 3,
+  logLevel: 1,
   blacklist: "",
   keyBindings: {
     display: {
@@ -18,13 +18,13 @@ export const defaultSettings: Settings = {
     },
     slower: {
       key: 83, // S
-      value: 0.1,
+      value: 0.5,
       force: false,
       predefined: true,
     },
     faster: {
       key: 68, // D
-      value: 0.1,
+      value: 0.5,
       force: false,
       predefined: true,
     },

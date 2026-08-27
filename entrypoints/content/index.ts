@@ -3,6 +3,7 @@ import { loadSettings } from "@/utils/storage";
 import "../inject.css";
 import type { KeyBindingName, Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
+import type { PublicPath } from "wxt/browser";
 
 let settings: Settings;
 let timerId = 0;
@@ -215,9 +216,7 @@ function setupListener() {
 
       log("Updating controller with new speed", 5);
 
-      const speedIndicator = video.vsc.speedIndicator;
-      if (speedIndicator !== undefined)
-        speedIndicator.textContent = speed.toFixed(2);
+      video.vsc.root.textContent = speed.toFixed(2);
 
       // show the controller for 1000ms if it's hidden.
       runAction({ action: "blink" });
@@ -266,19 +265,19 @@ function log(message: string, level: number) {
 
 export class Controller {
   private media: HTMLMediaElement;
-  public gui: HTMLElement;
-  public speedIndicator: HTMLElement | undefined = undefined;
+  public host: HTMLElement;
+  public root: Element;
   public blinkTimeOut: number | undefined;
 
   constructor(media: HTMLMediaElement, parent?: Node) {
     this.media = media;
-    this.gui = this.createGui(parent);
+    this.host = this.createGui(parent);
 
     mediaElements.push(media);
   }
 
   remove() {
-    this.gui.remove();
+    this.host.remove();
 
     delete this.media.vsc;
 
@@ -313,21 +312,23 @@ export class Controller {
     const shadow = wrapper.attachShadow({ mode: "open" });
     const shadowTemplate = `
         <style>
-          @import "${browser.runtime.getURL("/shadow.css")}";
+          @import "${browser.runtime.getURL("/assets/shadow.css" as PublicPath)}";
         </style>
 
         <div id="controller" style="top:${top}; left:${left}; opacity:${
           settings.controllerOpacity
         }">
-          <span data-action="drag" class="draggable">${speed}</span>
+          ${speed}
         </div>
       `;
 
     shadow.innerHTML = shadowTemplate;
 
-    const draggable = shadow.querySelector(".draggable");
-    if (draggable instanceof HTMLElement) {
-      draggable.addEventListener(
+    const root = shadow.querySelector("#controller");
+    if (root !== null) this.root = root;
+
+    if (root instanceof HTMLElement) {
+      root.addEventListener(
         "mousedown",
         (event) => {
           runAction({ action: "drag", event });
@@ -337,22 +338,20 @@ export class Controller {
       );
     }
 
-    shadow.querySelector("#controller")?.addEventListener(
+    root?.addEventListener(
       "click",
       (e) => {
         e.stopPropagation();
       },
       { capture: false },
     );
-    shadow.querySelector("#controller")?.addEventListener(
+    root?.addEventListener(
       "mousedown",
       (e) => {
         e.stopPropagation();
       },
       { capture: false },
     );
-
-    this.speedIndicator = shadow.querySelector("span") as HTMLElement;
 
     const insertTarget = this.media.parentElement ?? parent;
     insertTarget?.insertBefore(wrapper, insertTarget.firstChild);
@@ -397,8 +396,7 @@ function setSpeed(video: HTMLMediaElement, speed: number) {
   const speedvalue = speed.toFixed(2);
   video.playbackRate = Number(speedvalue);
 
-  const speedIndicator = video.vsc?.speedIndicator;
-  if (speedIndicator !== undefined) speedIndicator.textContent = speedvalue;
+  if (video.vsc !== undefined) video.vsc.root.textContent = speedvalue;
 
   log("Begin refreshCoolDown", 5);
 
@@ -424,7 +422,7 @@ function runAction(
   log("runAction Begin", 5);
 
   for (const media of mediaElements) {
-    const gui = media.vsc?.gui;
+    const gui = media.vsc?.host;
     if (gui === undefined) continue;
 
     log("Showing controller", 4);
@@ -521,7 +519,7 @@ function runAction(
 }
 
 function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
-  const gui = media.vsc?.gui;
+  const gui = media.vsc?.host;
   if (gui === undefined) return;
 
   const shadowController = gui.shadowRoot?.querySelector("#controller");
