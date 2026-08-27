@@ -5,6 +5,7 @@ import type { Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
 
 let settings: Settings;
+let timer = null;
 const mediaElements: HTMLMediaElement[] = [];
 
 export default defineContentScript({
@@ -123,7 +124,7 @@ function init(target: Document) {
   // recursively assign controller
   const assignController = (node: Node, parent: Node) => {
     if (node instanceof HTMLMediaElement) {
-      node.vsc = new Controller(node, parent);
+      node.vsc ??= new Controller(node, parent);
 
       return;
     }
@@ -179,7 +180,7 @@ function init(target: Document) {
   });
 
   for (const media of target.querySelectorAll("video,audio")) {
-    if (media instanceof HTMLMediaElement) media.vsc = new Controller(media);
+    if (media instanceof HTMLMediaElement) media.vsc ??= new Controller(media);
   }
 
   const iframes = target.querySelectorAll("iframe");
@@ -235,7 +236,7 @@ function setupListener() {
   5 - debug
   6 - debug high verbosity + stack trace on each message
 */
-function log(message, level) {
+function log(message: string, level) {
   const verbosity = settings.logLevel;
   if (level === undefined) {
     level = settings.defaultLogLevel;
@@ -275,77 +276,61 @@ function setKeyBindings(action: keyof Settings["keyBindings"], value: number) {
   settings.keyBindings[action].value = value;
 }
 
-// Data structures
-// ---------------
-// videoController (JS object) instances:
-//   video = AUDIO/VIDEO DOM element
-//   parent = A/V DOM element's parentElement OR
-//            (A/V elements discovered from the Mutation Observer)
-//            A/V element's parentNode OR the node whose children changed.
-//   div = Controller's DOM element (which happens to be a DIV)
-//   speedIndicator = DOM element in the Controller of the speed indicator
-
-// added to AUDIO / VIDEO DOM elements
-//    vsc = reference to the videoController
 export class Controller {
-  private video: HTMLMediaElement | null = null;
-  public div: HTMLElement | undefined;
-  public speedIndicator: HTMLElement | null = null;
+  private media: HTMLMediaElement;
+  public gui: HTMLElement;
+  public speedIndicator: HTMLElement | undefined = undefined;
 
-  constructor(target: HTMLMediaElement, parent?: Node) {
-    if (target.vsc !== undefined) {
-      return target.vsc;
-    }
+  constructor(media: HTMLMediaElement, parent?: Node) {
+    this.media = media;
+    this.gui = this.createGui(parent);
 
-    mediaElements.push(target);
-
-    this.video = target;
-    this.div = this.createGui(parent);
+    mediaElements.push(media);
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type !== "attributes") continue;
 
         log("mutation of A/V element", 5);
-        this.div?.classList.toggle(
+
+        const target = mutation.target;
+        if (!(target instanceof HTMLMediaElement)) continue;
+
+        this.gui.classList.toggle(
           "vsc-nosource",
-          mutation.target.src === "" && mutation.target.currentSrc === "",
+          target.src === "" && target.currentSrc === "",
         );
       }
     });
-    observer.observe(target, {
-      attributeFilter: ["src", "currentSrc"],
-    });
+    observer.observe(media, { attributeFilter: ["src", "currentSrc"] });
   }
 
   remove() {
-    this.div?.remove();
+    this.gui.remove();
 
-    delete this.video?.vsc;
+    delete this.media.vsc;
 
-    const index = mediaElements.indexOf(this.video);
+    const index = mediaElements.indexOf(this.media);
     if (index !== -1) {
       mediaElements.splice(index, 1);
     }
   }
 
   createGui(parent: Node | undefined) {
-    if (this.video === null) return;
-
     log("initializeControls Begin", 5);
 
-    const target = this.video.ownerDocument;
-    const speed = this.video.playbackRate.toFixed(2);
+    const target = this.media.ownerDocument;
+    const speed = this.media.playbackRate.toFixed(2);
 
-    const top = `${Math.max(this.video.offsetTop, 0)}px`;
-    const left = `${Math.max(this.video.offsetLeft, 0)}px`;
+    const top = `${Math.max(this.media.offsetTop, 0)}px`;
+    const left = `${Math.max(this.media.offsetLeft, 0)}px`;
 
     log("Speed variable set to: " + speed, 5);
 
     const wrapper = target.createElement("div");
     wrapper.classList.add("vsc-controller");
 
-    if (this.video.src === "" && this.video.currentSrc === "") {
+    if (this.media.src === "" && this.media.currentSrc === "") {
       wrapper.classList.add("vsc-nosource");
     }
 
@@ -413,9 +398,9 @@ export class Controller {
       { capture: false },
     );
 
-    this.speedIndicator = shadow.querySelector("span");
+    this.speedIndicator = shadow.querySelector("span") as HTMLElement;
 
-    const insertTarget = this.video.parentElement ?? parent;
+    const insertTarget = this.media.parentElement ?? parent;
     insertTarget?.insertBefore(wrapper, insertTarget.firstChild);
 
     return wrapper;
@@ -471,7 +456,7 @@ function setSpeed(video: HTMLMediaElement, speed: number) {
   video.playbackRate = Number(speedvalue);
 
   const speedIndicator = video.vsc?.speedIndicator;
-  speedIndicator?.textContent = speedvalue;
+  if (speedIndicator !== undefined) speedIndicator.textContent = speedvalue;
 
   refreshCoolDown();
 
@@ -487,7 +472,7 @@ function runAction(action, value, e) {
   }
 
   for (const media of mediaElements) {
-    const gui = media.vsc?.div;
+    const gui = media.vsc?.gui;
     if (gui === undefined) continue;
 
     // Don't change video speed if the video has a different controller
@@ -495,7 +480,16 @@ function runAction(action, value, e) {
       continue;
     }
 
-    showController(gui);
+    log("Showing controller", 4);
+    gui.classList.add("vcs-show");
+
+    if (timer) clearTimeout(timer);
+
+    timer = setTimeout(function () {
+      gui.classList.remove("vcs-show");
+      timer = false;
+      log("Hiding controller", 5);
+    }, 2000);
 
     if (!media.classList.contains("vsc-cancelled")) {
       switch (action) {
@@ -603,8 +597,8 @@ function resetSpeed(media: HTMLMediaElement, target) {
 }
 
 function handleDrag(media: HTMLMediaElement, e) {
-  const controller = media.vsc?.div;
-  if(controller === undefined) return;
+  const controller = media.vsc?.gui;
+  if (controller === undefined) return;
 
   const shadowController = controller.shadowRoot.querySelector("#controller");
 
@@ -647,18 +641,4 @@ function handleDrag(media: HTMLMediaElement, e) {
   parentElement.addEventListener("mouseup", stopDragging);
   parentElement.addEventListener("mouseleave", stopDragging);
   parentElement.addEventListener("mousemove", startDragging);
-}
-
-var timer = null;
-function showController(controller) {
-  log("Showing controller", 4);
-  controller.classList.add("vcs-show");
-
-  if (timer) clearTimeout(timer);
-
-  timer = setTimeout(function () {
-    controller.classList.remove("vcs-show");
-    timer = false;
-    log("Hiding controller", 5);
-  }, 2000);
 }
