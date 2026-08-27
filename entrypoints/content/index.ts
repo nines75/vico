@@ -58,9 +58,7 @@ function init(target: Document) {
   target.body.classList.add("vsc-initialized");
   log("initializeNow: vsc-initialized added to document body", 5);
 
-  if (target === globalThis.document) {
-    defineVideoController();
-  } else {
+  if (target !== globalThis.document) {
     const link = target.createElement("link");
     link.href = browser.runtime.getURL("inject.css");
     link.type = "text/css";
