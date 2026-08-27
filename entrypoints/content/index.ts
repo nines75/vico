@@ -127,7 +127,7 @@ function init(target: Document) {
   // recursively assign controller
   const assignController = (node: Node, parent: Node) => {
     if (node instanceof HTMLVideoElement || node instanceof HTMLAudioElement) {
-      node.vsc = new tc.videoController(node, parent);
+      node.vsc = new Controller(node, parent);
 
       return;
     }
@@ -183,7 +183,7 @@ function init(target: Document) {
   });
 
   for (const media of target.querySelectorAll("video,audio")) {
-    media.vsc = new tc.videoController(media);
+    media.vsc = new Controller(media);
   }
 
   const iframes = target.querySelectorAll("iframe");
@@ -288,20 +288,26 @@ function setKeyBindings(action: keyof Settings["keyBindings"], value: number) {
   settings.keyBindings[action].value = value;
 }
 
-function defineVideoController() {
-  // Data structures
-  // ---------------
-  // videoController (JS object) instances:
-  //   video = AUDIO/VIDEO DOM element
-  //   parent = A/V DOM element's parentElement OR
-  //            (A/V elements discovered from the Mutation Observer)
-  //            A/V element's parentNode OR the node whose children changed.
-  //   div = Controller's DOM element (which happens to be a DIV)
-  //   speedIndicator = DOM element in the Controller of the speed indicator
+// Data structures
+// ---------------
+// videoController (JS object) instances:
+//   video = AUDIO/VIDEO DOM element
+//   parent = A/V DOM element's parentElement OR
+//            (A/V elements discovered from the Mutation Observer)
+//            A/V element's parentNode OR the node whose children changed.
+//   div = Controller's DOM element (which happens to be a DIV)
+//   speedIndicator = DOM element in the Controller of the speed indicator
 
-  // added to AUDIO / VIDEO DOM elements
-  //    vsc = reference to the videoController
-  tc.videoController = function (target, parent) {
+// added to AUDIO / VIDEO DOM elements
+//    vsc = reference to the videoController
+class Controller {
+  private video: HTMLVideoElement | HTMLAudioElement | null = null;
+  private handlePlay: ((event: Event) => void) | undefined;
+  private handleSeek: ((event: Event) => void) | undefined;
+  public div: HTMLElement | undefined;
+  public speedIndicator: HTMLElement | null = null;
+
+  constructor(target: HTMLVideoElement | HTMLAudioElement, parent?: Node) {
     if (target.vsc) {
       return target.vsc;
     }
@@ -309,8 +315,9 @@ function defineVideoController() {
     tc.mediaElements.push(target);
 
     this.video = target;
-    this.parent = target.parentElement || parent;
-    storedSpeed = settings.speeds[target.currentSrc];
+
+    let storedSpeed = settings.speeds[target.currentSrc];
+
     if (settings.rememberSpeed) {
       log("Recalling stored speed due to rememberSpeed being enabled", 5);
       storedSpeed = settings.lastSpeed;
@@ -328,10 +335,11 @@ function defineVideoController() {
     log("Explicitly setting playbackRate to: " + storedSpeed, 5);
     target.playbackRate = storedSpeed;
 
-    this.div = this.initializeControls();
+    this.div = this.createGui(parent);
 
-    const mediaEventAction = function (event) {
+    const mediaEventAction = (event) => {
       storedSpeed = settings.speeds[event.target.currentSrc];
+
       if (settings.rememberSpeed) {
         log(
           "Storing lastSpeed into settings.speeds (rememberSpeed enabled)",
@@ -367,50 +375,53 @@ function defineVideoController() {
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (!(
-          mutation.type === "attributes" &&
-          (mutation.attributeName === "src" ||
-            mutation.attributeName === "currentSrc")
-        ))
-          continue;
+        if (mutation.type !== "attributes") continue;
 
         log("mutation of A/V element", 5);
-        const controller = this.div;
-        controller.classList.toggle(
+        this.div?.classList.toggle(
           "vsc-nosource",
-          !mutation.target.src && !mutation.target.currentSrc,
+          mutation.target.src === "" && mutation.target.currentSrc === "",
         );
       }
     });
     observer.observe(target, {
       attributeFilter: ["src", "currentSrc"],
     });
-  };
+  }
 
-  tc.videoController.prototype.remove = function () {
-    this.div.remove();
-    this.video.removeEventListener("play", this.handlePlay);
-    this.video.removeEventListener("seek", this.handleSeek);
-    delete this.video.vsc;
-    const idx = tc.mediaElements.indexOf(this.video);
-    if (idx != -1) {
-      tc.mediaElements.splice(idx, 1);
+  remove() {
+    this.div?.remove();
+
+    if (this.handlePlay !== undefined)
+      this.video?.removeEventListener("play", this.handlePlay);
+    if (this.handleSeek !== undefined)
+      this.video?.removeEventListener("seek", this.handleSeek);
+
+    delete this.video?.vsc;
+
+    const index = tc.mediaElements.indexOf(this.video);
+    if (index !== -1) {
+      tc.mediaElements.splice(index, 1);
     }
-  };
+  }
 
-  tc.videoController.prototype.initializeControls = function () {
+  createGui(parent: Node | undefined) {
+    if (this.video === null) return;
+
     log("initializeControls Begin", 5);
-    const document = this.video.ownerDocument;
+
+    const target = this.video.ownerDocument;
     const speed = this.video.playbackRate.toFixed(2);
-    const top = Math.max(this.video.offsetTop, 0) + "px",
-      left = Math.max(this.video.offsetLeft, 0) + "px";
+
+    const top = `${Math.max(this.video.offsetTop, 0)}px`;
+    const left = `${Math.max(this.video.offsetLeft, 0)}px`;
 
     log("Speed variable set to: " + speed, 5);
 
-    const wrapper = document.createElement("div");
+    const wrapper = target.createElement("div");
     wrapper.classList.add("vsc-controller");
 
-    if (!this.video.src && !this.video.currentSrc) {
+    if (this.video.src === "" && this.video.currentSrc === "") {
       wrapper.classList.add("vsc-nosource");
     }
 
@@ -437,12 +448,13 @@ function defineVideoController() {
           </span>
         </div>
       `;
+
     shadow.innerHTML = shadowTemplate;
-    shadow.querySelector(".draggable").addEventListener(
+    shadow.querySelector(".draggable")?.addEventListener(
       "mousedown",
-      (e) => {
-        runAction(e.target.dataset.action, false, e);
-        e.stopPropagation();
+      (event) => {
+        runAction(event.target?.dataset.action, false, event);
+        event.stopPropagation();
       },
       { capture: true },
     );
@@ -452,8 +464,8 @@ function defineVideoController() {
         "click",
         (e) => {
           runAction(
-            e.target.dataset.action,
-            getKeyBindings(e.target.dataset.action),
+            e.target?.dataset.action,
+            getKeyBindings(e.target?.dataset.action),
             e,
           );
           e.stopPropagation();
@@ -462,28 +474,28 @@ function defineVideoController() {
       );
     });
 
-    shadow
-      .querySelector("#controller")
-      .addEventListener("click", (e) => e.stopPropagation(), {
-        capture: false,
-      });
-    shadow
-      .querySelector("#controller")
-      .addEventListener("mousedown", (e) => e.stopPropagation(), {
-        capture: false,
-      });
+    shadow.querySelector("#controller")?.addEventListener(
+      "click",
+      (e) => {
+        e.stopPropagation();
+      },
+      { capture: false },
+    );
+    shadow.querySelector("#controller")?.addEventListener(
+      "mousedown",
+      (e) => {
+        e.stopPropagation();
+      },
+      { capture: false },
+    );
 
     this.speedIndicator = shadow.querySelector("span");
-    const fragment = document.createDocumentFragment();
-    fragment.append(wrapper);
 
-    // Note: when triggered via a MutationRecord, it's possible that the
-    // target is not the immediate parent. This appends the controller as
-    // the first element of the target, which may not be the parent.
-    this.parent.insertBefore(fragment, this.parent.firstChild);
+    const insertTarget = this.video.parentElement ?? parent;
+    insertTarget?.insertBefore(wrapper, insertTarget.firstChild);
 
     return wrapper;
-  };
+  }
 }
 
 function isBlacklisted() {
