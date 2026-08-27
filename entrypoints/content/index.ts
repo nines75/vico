@@ -649,36 +649,6 @@ function runAction(action, value, e) {
 
           break;
         }
-        case "pause": {
-          if (media.paused) {
-            log("Resuming video", 5);
-            media.play();
-          } else {
-            log("Pausing video", 5);
-            media.pause();
-          }
-
-          break;
-        }
-        case "muted": {
-          media.muted = !media.muted;
-
-          break;
-        }
-        case "mark": {
-          log("Adding marker", 5);
-          media.vsc.mark = media.currentTime;
-
-          break;
-        }
-        case "jump": {
-          log("Recalling marker", 5);
-          if (media.vsc.mark && typeof media.vsc.mark === "number") {
-            media.currentTime = media.vsc.mark;
-          }
-
-          break;
-        }
       }
     }
   }

@@ -108,10 +108,6 @@ function updateCustomShortcutInputText(inputItem, keyCode) {
 
 // List of custom actions for which customValue should be disabled
 const customActionsNoValues = new Set([
-  "pause",
-  "muted",
-  "mark",
-  "jump",
   "display",
 ]);
 
@@ -123,10 +119,6 @@ function add_shortcut() {
     <option value="advance">Advance</option>
     <option value="reset">Reset speed</option>
     <option value="fast">Preferred speed</option>
-    <option value="muted">Mute</option>
-    <option value="pause">Pause</option>
-    <option value="mark">Set marker</option>
-    <option value="jump">Jump to marker</option>
     <option value="display">Show/hide controller</option>
     </select>
     <input class="customKey" type="text" placeholder="press a key"/>
