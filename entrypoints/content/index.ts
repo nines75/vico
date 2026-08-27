@@ -2,6 +2,7 @@ import { defineContentScript } from "#imports";
 import { loadSettings } from "@/utils/storage";
 import "./inject.css";
 import type { Settings } from "@/types/settings.types";
+import { objectEntries } from "ts-extras";
 
 let settings: Settings;
 
@@ -104,13 +105,15 @@ function init(target: Document) {
         // Ignore keydown event if typing in a page without vsc
         if (tc.mediaElements.length === 0) return;
 
-        const item = Object.values(settings.keyBindings).find(
-          (keyBinding) => keyBinding.key === keyCode,
+        const item = objectEntries(settings.keyBindings).find(
+          ([, keyBinding]) => keyBinding.key === keyCode,
         );
         if (item !== undefined) {
-          runAction(item.action, item.value);
+          const [action, keyBinding] = item;
 
-          if (item.force) {
+          runAction(action, keyBinding.value);
+
+          if (keyBinding.force) {
             // disable websites key bindings
             event.preventDefault();
             event.stopPropagation();

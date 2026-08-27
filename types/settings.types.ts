@@ -16,7 +16,6 @@ export interface Settings {
 }
 
 interface KeyBinding {
-  action: string;
   key: number;
   value: number;
   force: boolean;
