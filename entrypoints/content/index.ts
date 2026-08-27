@@ -5,6 +5,7 @@ import type { Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
 
 let settings: Settings;
+const mediaElements: HTMLMediaElement[] = [];
 
 export default defineContentScript({
   allFrames: true,
@@ -16,11 +17,6 @@ export default defineContentScript({
     initHandler(document);
   },
 });
-
-const tc = {
-  // Holds a reference to all of the AUDIO/VIDEO DOM elements we've attached to
-  mediaElements: [],
-};
 
 // -------------------------------------------------------------------------------------------
 // initializer
@@ -103,7 +99,7 @@ function init(target: Document) {
           return;
 
         // Ignore keydown event if typing in a page without vsc
-        if (tc.mediaElements.length === 0) return;
+        if (mediaElements.length === 0) return;
 
         const item = objectEntries(settings.keyBindings).find(
           ([, keyBinding]) => keyBinding.key === keyCode,
@@ -126,7 +122,7 @@ function init(target: Document) {
 
   // recursively assign controller
   const assignController = (node: Node, parent: Node) => {
-    if (node instanceof HTMLVideoElement || node instanceof HTMLAudioElement) {
+    if (node instanceof HTMLMediaElement) {
       node.vsc = new Controller(node, parent);
 
       return;
@@ -144,7 +140,7 @@ function init(target: Document) {
     // Only proceed with supposed removal if node is missing from DOM
     if (target.body.contains(node)) return;
 
-    if (node instanceof HTMLVideoElement || node instanceof HTMLAudioElement) {
+    if (node instanceof HTMLMediaElement) {
       if (node.vsc !== undefined) {
         node.vsc.remove();
       }
@@ -183,7 +179,7 @@ function init(target: Document) {
   });
 
   for (const media of target.querySelectorAll("video,audio")) {
-    media.vsc = new Controller(media);
+    if (media instanceof HTMLMediaElement) media.vsc = new Controller(media);
   }
 
   const iframes = target.querySelectorAll("iframe");
@@ -207,11 +203,11 @@ function setupListener() {
         event.stopImmediatePropagation();
       }
 
-      const video = event.target;
-
       // It's possible to get a rate change on a VIDEO/AUDIO that doesn't have
-      // a video controller attached to it.  If we do, ignore it.
-      if (!video.vsc) return;
+      // a video controller attached to it. If we do, ignore it.
+      const video = event.target;
+      if (!(video instanceof HTMLMediaElement) || video.vsc === undefined)
+        return;
 
       const speedIndicator = video.vsc.speedIndicator;
       const src = video.currentSrc;
@@ -300,19 +296,19 @@ function setKeyBindings(action: keyof Settings["keyBindings"], value: number) {
 
 // added to AUDIO / VIDEO DOM elements
 //    vsc = reference to the videoController
-class Controller {
-  private video: HTMLVideoElement | HTMLAudioElement | null = null;
+export class Controller {
+  private video: HTMLMediaElement | null = null;
   private handlePlay: ((event: Event) => void) | undefined;
   private handleSeek: ((event: Event) => void) | undefined;
   public div: HTMLElement | undefined;
   public speedIndicator: HTMLElement | null = null;
 
-  constructor(target: HTMLVideoElement | HTMLAudioElement, parent?: Node) {
-    if (target.vsc) {
+  constructor(target: HTMLMediaElement, parent?: Node) {
+    if (target.vsc !== undefined) {
       return target.vsc;
     }
 
-    tc.mediaElements.push(target);
+    mediaElements.push(target);
 
     this.video = target;
 
@@ -399,9 +395,9 @@ class Controller {
 
     delete this.video?.vsc;
 
-    const index = tc.mediaElements.indexOf(this.video);
+    const index = mediaElements.indexOf(this.video);
     if (index !== -1) {
-      tc.mediaElements.splice(index, 1);
+      mediaElements.splice(index, 1);
     }
   }
 
@@ -540,50 +536,52 @@ function refreshCoolDown() {
   log("End refreshCoolDown", 5);
 }
 
-function setSpeed(video, speed) {
-  log("setSpeed started: " + speed, 5);
+function setSpeed(video: HTMLMediaElement, speed: number) {
+  log(`setSpeed started: ${speed}`, 5);
 
   const speedvalue = speed.toFixed(2);
   video.playbackRate = Number(speedvalue);
 
-  const speedIndicator = video.vsc.speedIndicator;
-  speedIndicator.textContent = speedvalue;
+  const speedIndicator = video.vsc?.speedIndicator;
+  speedIndicator?.textContent = speedvalue;
+
   settings.lastSpeed = speed;
+
   refreshCoolDown();
-  log("setSpeed finished: " + speed, 5);
+
+  log(`setSpeed finished: ${speed}`, 5);
 }
 
 function runAction(action, value, e) {
   log("runAction Begin", 5);
-
-  const mediaTags = tc.mediaElements;
 
   // Get the controller that was used if called from a button press event e
   if (e) {
     var targetController = e.target.getRootNode().host;
   }
 
-  for (const v of mediaTags) {
-    var controller = v.vsc.div;
+  for (const media of mediaElements) {
+    const gui = media.vsc?.div;
+    if (gui === undefined) continue;
 
     // Don't change video speed if the video has a different controller
-    if (e && targetController != controller) {
+    if (e && targetController != gui) {
       continue;
     }
 
-    showController(controller);
+    showController(gui);
 
-    if (!v.classList.contains("vsc-cancelled")) {
+    if (!media.classList.contains("vsc-cancelled")) {
       switch (action) {
         case "rewind": {
           log("Rewind", 5);
-          v.currentTime -= value;
+          media.currentTime -= value;
 
           break;
         }
         case "advance": {
           log("Fast forward", 5);
-          v.currentTime += value;
+          media.currentTime += value;
 
           break;
         }
@@ -592,10 +590,10 @@ function runAction(action, value, e) {
           // Maximum playback speed in Chrome is set to 16:
           // https://cs.chromium.org/chromium/src/third_party/blink/renderer/core/html/media/html_media_element.cc?gsn=kMinRate&l=166
           var s = Math.min(
-            (v.playbackRate < 0.1 ? 0 : v.playbackRate) + value,
+            (media.playbackRate < 0.1 ? 0 : media.playbackRate) + value,
             16,
           );
-          setSpeed(v, s);
+          setSpeed(media, s);
 
           break;
         }
@@ -603,21 +601,21 @@ function runAction(action, value, e) {
           log("Decrease speed", 5);
           // Video min rate is 0.0625:
           // https://cs.chromium.org/chromium/src/third_party/blink/renderer/core/html/media/html_media_element.cc?gsn=kMinRate&l=165
-          var s = Math.max(v.playbackRate - value, 0.07);
-          setSpeed(v, s);
+          var s = Math.max(media.playbackRate - value, 0.07);
+          setSpeed(media, s);
 
           break;
         }
         case "reset": {
           log("Reset speed", 5);
-          resetSpeed(v, 1);
+          resetSpeed(media, 1);
 
           break;
         }
         case "display": {
           log("Showing controller", 5);
-          controller.classList.add("vsc-manual");
-          controller.classList.toggle("vsc-hidden");
+          gui.classList.add("vsc-manual");
+          gui.classList.toggle("vsc-hidden");
 
           break;
         }
@@ -625,15 +623,15 @@ function runAction(action, value, e) {
           log("Showing controller momentarily", 5);
           // if vsc is hidden, show it briefly to give the use visual feedback that the action is excuted.
           if (
-            controller.classList.contains("vsc-hidden") ||
-            controller.blinkTimeOut !== undefined
+            gui.classList.contains("vsc-hidden") ||
+            gui.blinkTimeOut !== undefined
           ) {
-            clearTimeout(controller.blinkTimeOut);
-            controller.classList.remove("vsc-hidden");
-            controller.blinkTimeOut = setTimeout(
+            clearTimeout(gui.blinkTimeOut);
+            gui.classList.remove("vsc-hidden");
+            gui.blinkTimeOut = setTimeout(
               () => {
-                controller.classList.add("vsc-hidden");
-                controller.blinkTimeOut = undefined;
+                gui.classList.add("vsc-hidden");
+                gui.blinkTimeOut = undefined;
               },
               value ? value : 1000,
             );
@@ -642,32 +640,42 @@ function runAction(action, value, e) {
           break;
         }
         case "drag": {
-          handleDrag(v, e);
+          handleDrag(media, e);
 
           break;
         }
         case "fast": {
-          resetSpeed(v, value);
+          resetSpeed(media, value);
 
           break;
         }
         case "pause": {
-          pause(v);
+          if (media.paused) {
+            log("Resuming video", 5);
+            media.play();
+          } else {
+            log("Pausing video", 5);
+            media.pause();
+          }
 
           break;
         }
         case "muted": {
-          muted(v);
+          media.muted = !media.muted;
 
           break;
         }
         case "mark": {
-          setMark(v);
+          log("Adding marker", 5);
+          media.vsc.mark = media.currentTime;
 
           break;
         }
         case "jump": {
-          jumpToMark(v);
+          log("Recalling marker", 5);
+          if (media.vsc.mark && typeof media.vsc.mark === "number") {
+            media.currentTime = media.vsc.mark;
+          }
 
           break;
         }
@@ -677,55 +685,31 @@ function runAction(action, value, e) {
   log("runAction End", 5);
 }
 
-function pause(v) {
-  if (v.paused) {
-    log("Resuming video", 5);
-    v.play();
-  } else {
-    log("Pausing video", 5);
-    v.pause();
-  }
-}
-
-function resetSpeed(v, target) {
-  if (v.playbackRate === target) {
-    if (v.playbackRate === getKeyBindings("reset")) {
+function resetSpeed(media: HTMLMediaElement, target) {
+  if (media.playbackRate === target) {
+    if (media.playbackRate === getKeyBindings("reset")) {
       if (target === 1) {
         log('Toggling playback speed to "fast" speed', 4);
-        setSpeed(v, getKeyBindings("fast"));
+        setSpeed(media, getKeyBindings("fast"));
       } else {
         log("Resetting playback speed to 1.0", 4);
-        setSpeed(v, 1);
+        setSpeed(media, 1);
       }
     } else {
       log('Toggling playback speed to "reset" speed', 4);
-      setSpeed(v, getKeyBindings("reset"));
+      setSpeed(media, getKeyBindings("reset"));
     }
   } else {
     log('Toggling playback speed to "reset" speed', 4);
-    setKeyBindings("reset", v.playbackRate);
-    setSpeed(v, target);
+    setKeyBindings("reset", media.playbackRate);
+    setSpeed(media, target);
   }
 }
 
-function muted(v) {
-  v.muted = v.muted !== true;
-}
+function handleDrag(media: HTMLMediaElement, e) {
+  const controller = media.vsc?.div;
+  if(controller === undefined) return;
 
-function setMark(v) {
-  log("Adding marker", 5);
-  v.vsc.mark = v.currentTime;
-}
-
-function jumpToMark(v) {
-  log("Recalling marker", 5);
-  if (v.vsc.mark && typeof v.vsc.mark === "number") {
-    v.currentTime = v.vsc.mark;
-  }
-}
-
-function handleDrag(video, e) {
-  const controller = video.vsc.div;
   const shadowController = controller.shadowRoot.querySelector("#controller");
 
   // Find nearest parent of same size as video parent.
@@ -738,7 +722,7 @@ function handleDrag(video, e) {
     parentElement = parentElement.parentNode;
   }
 
-  video.classList.add("vcs-dragging");
+  media.classList.add("vcs-dragging");
   shadowController.classList.add("dragging");
 
   const initialMouseXY = [e.clientX, e.clientY];
@@ -761,7 +745,7 @@ function handleDrag(video, e) {
     parentElement.removeEventListener("mouseleave", stopDragging);
 
     shadowController.classList.remove("dragging");
-    video.classList.remove("vcs-dragging");
+    media.classList.remove("vcs-dragging");
   };
 
   parentElement.addEventListener("mouseup", stopDragging);
