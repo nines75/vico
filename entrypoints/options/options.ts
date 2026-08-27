@@ -118,7 +118,6 @@ function add_shortcut() {
     <option value="rewind">Rewind</option>
     <option value="advance">Advance</option>
     <option value="reset">Reset speed</option>
-    <option value="fast">Preferred speed</option>
     <option value="display">Show/hide controller</option>
     </select>
     <input class="customKey" type="text" placeholder="press a key"/>
@@ -196,7 +195,6 @@ function save_options() {
   browser.storage.local.remove([
     "resetSpeed",
     "speedStep",
-    "fastSpeed",
     "rewindTime",
     "advanceTime",
     "resetKeyCode",
@@ -204,7 +202,6 @@ function save_options() {
     "fasterKeyCode",
     "rewindKeyCode",
     "advanceKeyCode",
-    "fastKeyCode",
   ]);
   browser.storage.local.set(
     {

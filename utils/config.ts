@@ -46,11 +46,5 @@ export const defaultSettings: Settings = {
       force: false,
       predefined: true,
     },
-    fast: {
-      key: 71, // G
-      value: 1.8,
-      force: false,
-      predefined: true,
-    },
   },
 };

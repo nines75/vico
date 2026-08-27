@@ -11,7 +11,7 @@ export interface Settings {
 }
 
 export type KeyBindingName =
-  "display" | "slower" | "faster" | "rewind" | "advance" | "reset" | "fast";
+  "display" | "slower" | "faster" | "rewind" | "advance" | "reset";
 
 interface KeyBinding {
   key: number;

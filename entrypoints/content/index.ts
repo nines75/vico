@@ -520,7 +520,7 @@ function runAction(
       }
       case "reset": {
         log("Reset speed", 5);
-        resetSpeed(media, 1);
+        setSpeed(media, 1)
 
         break;
       }
@@ -558,35 +558,9 @@ function runAction(
 
         break;
       }
-      case "fast": {
-        resetSpeed(media, params.value);
-
-        break;
-      }
     }
   }
   log("runAction End", 5);
-}
-
-function resetSpeed(media: HTMLMediaElement, target) {
-  if (media.playbackRate === target) {
-    if (media.playbackRate === getKeyBindings("reset")) {
-      if (target === 1) {
-        log('Toggling playback speed to "fast" speed', 4);
-        setSpeed(media, getKeyBindings("fast"));
-      } else {
-        log("Resetting playback speed to 1.0", 4);
-        setSpeed(media, 1);
-      }
-    } else {
-      log('Toggling playback speed to "reset" speed', 4);
-      setSpeed(media, getKeyBindings("reset"));
-    }
-  } else {
-    log('Toggling playback speed to "reset" speed', 4);
-    setKeyBindings("reset", media.playbackRate);
-    setSpeed(media, target);
-  }
 }
 
 function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
