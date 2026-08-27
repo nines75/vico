@@ -264,14 +264,6 @@ function log(message: string, level: number) {
   }
 }
 
-function getKeyBindings(action: keyof Settings["keyBindings"]) {
-  return settings.keyBindings[action].value;
-}
-
-function setKeyBindings(action: keyof Settings["keyBindings"], value: number) {
-  settings.keyBindings[action].value = value;
-}
-
 export class Controller {
   private media: HTMLMediaElement;
   public gui: HTMLElement;
@@ -328,13 +320,6 @@ export class Controller {
           settings.controllerOpacity
         }">
           <span data-action="drag" class="draggable">${speed}</span>
-          <span id="controls">
-            <button data-action="rewind" class="rw">«</button>
-            <button data-action="slower">&minus;</button>
-            <button data-action="faster">&plus;</button>
-            <button data-action="advance" class="rw">»</button>
-            <button data-action="display" class="hideButton">&times;</button>
-          </span>
         </div>
       `;
 
@@ -351,21 +336,6 @@ export class Controller {
         { capture: true },
       );
     }
-
-    shadow.querySelectorAll("button").forEach(function (button) {
-      button.addEventListener(
-        "click",
-        (e) => {
-          runAction({
-            action: e.target?.dataset.action,
-            value: getKeyBindings(e.target?.dataset.action),
-            event: e,
-          });
-          e.stopPropagation();
-        },
-        { capture: true },
-      );
-    });
 
     shadow.querySelector("#controller")?.addEventListener(
       "click",
@@ -453,22 +423,9 @@ function runAction(
 ) {
   log("runAction Begin", 5);
 
-  // Get the controller that was used if called from a button press event e
-  let targetController: Element | undefined;
-  const target = params.event?.target;
-  if (target instanceof HTMLElement) {
-    const root = target.getRootNode();
-    if (root instanceof ShadowRoot) {
-      targetController = root.host;
-    }
-  }
-
   for (const media of mediaElements) {
     const gui = media.vsc?.gui;
     if (gui === undefined) continue;
-
-    // Don't change video speed if the video has a different controller
-    if (targetController !== undefined && targetController !== gui) continue;
 
     log("Showing controller", 4);
     gui.classList.add("vcs-show");
