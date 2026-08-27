@@ -1,6 +1,6 @@
 import { browser, defineContentScript } from "#imports";
 import { loadSettings } from "@/utils/storage";
-import "./inject.css";
+import "../inject.css";
 import type { KeyBindingName, Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
 
@@ -61,7 +61,7 @@ function init(target: Document) {
 
   if (target !== globalThis.document) {
     const link = target.createElement("link");
-    link.href = browser.runtime.getURL("inject.css");
+    link.href = browser.runtime.getURL("/inject.css");
     link.type = "text/css";
     link.rel = "stylesheet";
 
@@ -313,7 +313,7 @@ export class Controller {
     const shadow = wrapper.attachShadow({ mode: "open" });
     const shadowTemplate = `
         <style>
-          @import "${browser.runtime.getURL("shadow.css")}";
+          @import "${browser.runtime.getURL("/shadow.css")}";
         </style>
 
         <div id="controller" style="top:${top}; left:${left}; opacity:${
@@ -477,7 +477,7 @@ function runAction(
       }
       case "reset": {
         log("Reset speed", 5);
-        setSpeed(media, 1)
+        setSpeed(media, 1);
 
         break;
       }
