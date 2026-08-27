@@ -37,7 +37,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/firefox-webext-browser": "^143.0.0",
     "@wxt-dev/auto-icons": "^1.1.2",
     "concurrently": "^10.0.5",
     "eslint": "^10.8.1",

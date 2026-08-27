@@ -1,4 +1,4 @@
-import { defineContentScript } from "#imports";
+import { browser, defineContentScript } from "#imports";
 import { loadSettings } from "@/utils/storage";
 import "./inject.css";
 import type { KeyBindingName, Settings } from "@/types/settings.types";
