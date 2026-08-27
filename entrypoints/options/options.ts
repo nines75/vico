@@ -188,7 +188,6 @@ function save_options() {
   }
   // Remove added shortcuts
 
-  const rememberSpeed = document.querySelector("#rememberSpeed").checked;
   const enabled = document.querySelector("#enabled").checked;
   const startHidden = document.querySelector("#startHidden").checked;
   const controllerOpacity = document.querySelector("#controllerOpacity").value;
@@ -209,7 +208,6 @@ function save_options() {
   ]);
   browser.storage.local.set(
     {
-      rememberSpeed: rememberSpeed,
       enabled: enabled,
       startHidden: startHidden,
       controllerOpacity: controllerOpacity,
@@ -230,7 +228,6 @@ function save_options() {
 // Restores options from browser.storage
 function restore_options() {
   browser.storage.local.get(defaultSettings, function (storage) {
-    document.querySelector("#rememberSpeed").checked = storage.rememberSpeed;
     document.querySelector("#enabled").checked = storage.enabled;
     document.querySelector("#startHidden").checked = storage.startHidden;
     document.querySelector("#controllerOpacity").value =

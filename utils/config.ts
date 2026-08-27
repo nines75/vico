@@ -3,9 +3,7 @@ import type { Settings } from "@/types/settings.types";
 export const defaultSettings: Settings = {
   enabled: true,
   speed: 1,
-  lastSpeed: 1,
   displayKeyCode: 86,
-  rememberSpeed: false,
   startHidden: false,
   controllerOpacity: 0.3,
   defaultLogLevel: 4,

@@ -217,15 +217,6 @@ function setupListener() {
 
       log("Updating controller with new speed", 5);
       speedIndicator.textContent = speed.toFixed(2);
-      settings.speeds[src] = speed;
-
-      log("Storing lastSpeed in settings for the rememberSpeed feature", 5);
-      settings.lastSpeed = speed;
-
-      log("Syncing chrome settings for lastSpeed", 5);
-      browser.storage.local.set({ lastSpeed: speed }, () => {
-        log("Speed setting saved: " + speed, 5);
-      });
 
       // show the controller for 1000ms if it's hidden.
       runAction("blink", null, null);
@@ -298,8 +289,6 @@ function setKeyBindings(action: keyof Settings["keyBindings"], value: number) {
 //    vsc = reference to the videoController
 export class Controller {
   private video: HTMLMediaElement | null = null;
-  private handlePlay: ((event: Event) => void) | undefined;
-  private handleSeek: ((event: Event) => void) | undefined;
   public div: HTMLElement | undefined;
   public speedIndicator: HTMLElement | null = null;
 
@@ -311,63 +300,7 @@ export class Controller {
     mediaElements.push(target);
 
     this.video = target;
-
-    let storedSpeed = settings.speeds[target.currentSrc];
-
-    if (settings.rememberSpeed) {
-      log("Recalling stored speed due to rememberSpeed being enabled", 5);
-      storedSpeed = settings.lastSpeed;
-    } else {
-      if (!storedSpeed) {
-        log(
-          "Overwriting stored speed to 1.0 due to rememberSpeed being disabled",
-          5,
-        );
-        storedSpeed = 1;
-      }
-      setKeyBindings("reset", getKeyBindings("fast")); // resetSpeed = fastSpeed
-    }
-
-    log("Explicitly setting playbackRate to: " + storedSpeed, 5);
-    target.playbackRate = storedSpeed;
-
     this.div = this.createGui(parent);
-
-    const mediaEventAction = (event) => {
-      storedSpeed = settings.speeds[event.target.currentSrc];
-
-      if (settings.rememberSpeed) {
-        log(
-          "Storing lastSpeed into settings.speeds (rememberSpeed enabled)",
-          5,
-        );
-        storedSpeed = settings.lastSpeed;
-      } else {
-        if (!storedSpeed) {
-          log("Overwriting stored speed to 1.0 (rememberSpeed not enabled)", 4);
-          storedSpeed = 1;
-        }
-        // resetSpeed isn't really a reset, it's a toggle
-        log("Setting reset keybinding to fast", 5);
-        setKeyBindings("reset", getKeyBindings("fast")); // resetSpeed = fastSpeed
-      }
-      // TODO: Check if explicitly setting the playback rate to 1.0 is
-      // necessary when rememberSpeed is disabled (this may accidentally
-      // override a website's intentional initial speed setting interfering
-      // with the site's default behavior)
-      log("Explicitly setting playbackRate to: " + storedSpeed, 4);
-      setSpeed(event.target, storedSpeed);
-    };
-
-    target.addEventListener(
-      "play",
-      (this.handlePlay = mediaEventAction.bind(this)),
-    );
-
-    target.addEventListener(
-      "seeked",
-      (this.handleSeek = mediaEventAction.bind(this)),
-    );
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -387,11 +320,6 @@ export class Controller {
 
   remove() {
     this.div?.remove();
-
-    if (this.handlePlay !== undefined)
-      this.video?.removeEventListener("play", this.handlePlay);
-    if (this.handleSeek !== undefined)
-      this.video?.removeEventListener("seek", this.handleSeek);
 
     delete this.video?.vsc;
 
@@ -544,8 +472,6 @@ function setSpeed(video: HTMLMediaElement, speed: number) {
 
   const speedIndicator = video.vsc?.speedIndicator;
   speedIndicator?.textContent = speedvalue;
-
-  settings.lastSpeed = speed;
 
   refreshCoolDown();
 
