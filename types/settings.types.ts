@@ -7,11 +7,11 @@ export interface Settings {
   blacklist: string;
   defaultLogLevel: number;
   logLevel: number;
-  keyBindings: Record<
-    "display" | "slower" | "faster" | "rewind" | "advance" | "reset" | "fast",
-    KeyBinding
-  >;
+  keyBindings: Record<KeyBindingName, KeyBinding>;
 }
+
+export type KeyBindingName =
+  "display" | "slower" | "faster" | "rewind" | "advance" | "reset" | "fast";
 
 interface KeyBinding {
   key: number;

@@ -1,11 +1,12 @@
 import { defineContentScript } from "#imports";
 import { loadSettings } from "@/utils/storage";
 import "./inject.css";
-import type { Settings } from "@/types/settings.types";
+import type { KeyBindingName, Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
 
 let settings: Settings;
-let timer = null;
+let timerId = 0;
+let coolDownId = 0;
 const mediaElements: HTMLMediaElement[] = [];
 
 export default defineContentScript({
@@ -106,7 +107,7 @@ function init(target: Document) {
         if (item !== undefined) {
           const [action, keyBinding] = item;
 
-          runAction(action, keyBinding.value);
+          runAction({ action, value: keyBinding.value });
 
           if (keyBinding.force) {
             // disable websites key bindings
@@ -197,7 +198,7 @@ function setupListener() {
   document.addEventListener(
     "ratechange",
     (event) => {
-      if (coolDown) {
+      if (coolDownId > 0) {
         log("Speed event propagation blocked", 4);
         event.stopImmediatePropagation();
       }
@@ -208,17 +209,18 @@ function setupListener() {
       if (!(video instanceof HTMLMediaElement) || video.vsc === undefined)
         return;
 
-      const speedIndicator = video.vsc.speedIndicator;
-      const src = video.currentSrc;
       const speed = Number(video.playbackRate.toFixed(2));
 
       log(`Playback rate changed to ${speed}`, 4);
 
       log("Updating controller with new speed", 5);
-      speedIndicator.textContent = speed.toFixed(2);
+
+      const speedIndicator = video.vsc.speedIndicator;
+      if (speedIndicator !== undefined)
+        speedIndicator.textContent = speed.toFixed(2);
 
       // show the controller for 1000ms if it's hidden.
-      runAction("blink", null, null);
+      runAction({ action: "blink" });
     },
     { capture: true },
   );
@@ -234,34 +236,30 @@ function setupListener() {
   5 - debug
   6 - debug high verbosity + stack trace on each message
 */
-function log(message: string, level) {
-  const verbosity = settings.logLevel;
-  if (level === undefined) {
-    level = settings.defaultLogLevel;
-  }
-  if (verbosity >= level) {
-    switch (level) {
-      case 2: {
-        console.log("ERROR:" + message);
-        break;
-      }
-      case 3: {
-        console.log("WARNING:" + message);
-        break;
-      }
-      case 4: {
-        console.log("INFO:" + message);
-        break;
-      }
-      case 5: {
-        console.log("DEBUG:" + message);
-        break;
-      }
-      case 6: {
-        console.log("DEBUG (VERBOSE):" + message);
-        console.trace();
-        break;
-      }
+function log(message: string, level: number) {
+  if (settings.logLevel < level) return;
+
+  switch (level) {
+    case 2: {
+      console.log("ERROR:" + message);
+      break;
+    }
+    case 3: {
+      console.log("WARNING:" + message);
+      break;
+    }
+    case 4: {
+      console.log("INFO:" + message);
+      break;
+    }
+    case 5: {
+      console.log("DEBUG:" + message);
+      break;
+    }
+    case 6: {
+      console.log("DEBUG (VERBOSE):" + message);
+      console.trace();
+      break;
     }
   }
 }
@@ -278,6 +276,7 @@ export class Controller {
   private media: HTMLMediaElement;
   public gui: HTMLElement;
   public speedIndicator: HTMLElement | undefined = undefined;
+  public blinkTimeOut: number | undefined;
 
   constructor(media: HTMLMediaElement, parent?: Node) {
     this.media = media;
@@ -340,24 +339,28 @@ export class Controller {
       `;
 
     shadow.innerHTML = shadowTemplate;
-    shadow.querySelector(".draggable")?.addEventListener(
-      "mousedown",
-      (event) => {
-        runAction(event.target?.dataset.action, false, event);
-        event.stopPropagation();
-      },
-      { capture: true },
-    );
+
+    const draggable = shadow.querySelector(".draggable");
+    if (draggable instanceof HTMLElement) {
+      draggable.addEventListener(
+        "mousedown",
+        (event) => {
+          runAction({ action: "drag", event });
+          event.stopPropagation();
+        },
+        { capture: true },
+      );
+    }
 
     shadow.querySelectorAll("button").forEach(function (button) {
       button.addEventListener(
         "click",
         (e) => {
-          runAction(
-            e.target?.dataset.action,
-            getKeyBindings(e.target?.dataset.action),
-            e,
-          );
+          runAction({
+            action: e.target?.dataset.action,
+            value: getKeyBindings(e.target?.dataset.action),
+            event: e,
+          });
           e.stopPropagation();
         },
         { capture: true },
@@ -418,18 +421,6 @@ function isBlacklisted() {
   return false;
 }
 
-let coolDown = false;
-function refreshCoolDown() {
-  log("Begin refreshCoolDown", 5);
-  if (coolDown) {
-    clearTimeout(coolDown);
-  }
-  coolDown = setTimeout(function () {
-    coolDown = false;
-  }, 1000);
-  log("End refreshCoolDown", 5);
-}
-
 function setSpeed(video: HTMLMediaElement, speed: number) {
   log(`setSpeed started: ${speed}`, 5);
 
@@ -439,17 +430,37 @@ function setSpeed(video: HTMLMediaElement, speed: number) {
   const speedIndicator = video.vsc?.speedIndicator;
   if (speedIndicator !== undefined) speedIndicator.textContent = speedvalue;
 
-  refreshCoolDown();
+  log("Begin refreshCoolDown", 5);
+
+  if (coolDownId > 0) {
+    clearTimeout(coolDownId);
+  }
+
+  coolDownId = setTimeout(() => {
+    coolDownId = 0;
+  }, 1000);
+
+  log("End refreshCoolDown", 5);
 
   log(`setSpeed finished: ${speed}`, 5);
 }
 
-function runAction(action, value, e) {
+function runAction(
+  params:
+    | { action: KeyBindingName; value: number }
+    | { action: "blink" }
+    | { action: "drag"; event: MouseEvent },
+) {
   log("runAction Begin", 5);
 
   // Get the controller that was used if called from a button press event e
-  if (e) {
-    var targetController = e.target.getRootNode().host;
+  let targetController: Element | undefined;
+  const target = params.event?.target;
+  if (target instanceof HTMLElement) {
+    const root = target.getRootNode();
+    if (root instanceof ShadowRoot) {
+      targetController = root.host;
+    }
   }
 
   for (const media of mediaElements) {
@@ -457,53 +468,52 @@ function runAction(action, value, e) {
     if (gui === undefined) continue;
 
     // Don't change video speed if the video has a different controller
-    if (e && targetController != gui) {
-      continue;
-    }
+    if (targetController !== undefined && targetController !== gui) continue;
 
     log("Showing controller", 4);
     gui.classList.add("vcs-show");
 
-    if (timer) clearTimeout(timer);
+    if (timerId > 0) clearTimeout(timerId);
 
-    timer = setTimeout(function () {
+    timerId = setTimeout(() => {
       gui.classList.remove("vcs-show");
-      timer = false;
+      timerId = 0;
+
       log("Hiding controller", 5);
     }, 2000);
 
     if (!media.classList.contains("vsc-cancelled")) {
-      switch (action) {
+      switch (params.action) {
         case "rewind": {
           log("Rewind", 5);
-          media.currentTime -= value;
+          media.currentTime -= params.value;
 
           break;
         }
         case "advance": {
           log("Fast forward", 5);
-          media.currentTime += value;
+          media.currentTime += params.value;
 
           break;
         }
         case "faster": {
           log("Increase speed", 5);
-          // Maximum playback speed in Chrome is set to 16:
-          // https://cs.chromium.org/chromium/src/third_party/blink/renderer/core/html/media/html_media_element.cc?gsn=kMinRate&l=166
-          var s = Math.min(
-            (media.playbackRate < 0.1 ? 0 : media.playbackRate) + value,
+
+          // min rate is 16
+          const speed = Math.min(
+            (media.playbackRate < 0.1 ? 0 : media.playbackRate) + params.value,
             16,
           );
-          setSpeed(media, s);
+          setSpeed(media, speed);
 
           break;
         }
         case "slower": {
           log("Decrease speed", 5);
-          // Video min rate is 0.0625:
-          // https://cs.chromium.org/chromium/src/third_party/blink/renderer/core/html/media/html_media_element.cc?gsn=kMinRate&l=165
-          var s = Math.max(media.playbackRate - value, 0.07);
-          setSpeed(media, s);
+
+          // min rate is 0.0625
+          const speed = Math.max(media.playbackRate - params.value, 0.07);
+          setSpeed(media, speed);
 
           break;
         }
@@ -522,31 +532,33 @@ function runAction(action, value, e) {
         }
         case "blink": {
           log("Showing controller momentarily", 5);
+
+          if (media.vsc === undefined) break;
+
           // if vsc is hidden, show it briefly to give the use visual feedback that the action is excuted.
           if (
             gui.classList.contains("vsc-hidden") ||
-            gui.blinkTimeOut !== undefined
+            media.vsc.blinkTimeOut !== undefined
           ) {
-            clearTimeout(gui.blinkTimeOut);
+            clearTimeout(media.vsc.blinkTimeOut);
             gui.classList.remove("vsc-hidden");
-            gui.blinkTimeOut = setTimeout(
-              () => {
-                gui.classList.add("vsc-hidden");
-                gui.blinkTimeOut = undefined;
-              },
-              value ? value : 1000,
-            );
+
+            media.vsc.blinkTimeOut = setTimeout(() => {
+              gui.classList.add("vsc-hidden");
+
+              if (media.vsc !== undefined) media.vsc.blinkTimeOut = undefined;
+            }, 1000);
           }
 
           break;
         }
         case "drag": {
-          handleDrag(media, e);
+          handleDrag(media, params.event);
 
           break;
         }
         case "fast": {
-          resetSpeed(media, value);
+          resetSpeed(media, params.value);
 
           break;
         }
@@ -577,49 +589,52 @@ function resetSpeed(media: HTMLMediaElement, target) {
   }
 }
 
-function handleDrag(media: HTMLMediaElement, e) {
-  const controller = media.vsc?.gui;
-  if (controller === undefined) return;
+function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
+  const gui = media.vsc?.gui;
+  if (gui === undefined) return;
 
-  const shadowController = controller.shadowRoot.querySelector("#controller");
+  const shadowController = gui.shadowRoot?.querySelector("#controller");
+  if (!(shadowController instanceof HTMLElement)) return;
+
+  const directParent = gui.parentElement;
+  if (directParent === null) return;
 
   // Find nearest parent of same size as video parent.
-  let parentElement = controller.parentElement;
+  let parent = directParent;
   while (
-    parentElement.parentNode &&
-    parentElement.parentNode.offsetHeight === parentElement.offsetHeight &&
-    parentElement.parentNode.offsetWidth === parentElement.offsetWidth
+    parent.parentElement !== null &&
+    parent.parentElement.offsetHeight === parent.offsetHeight &&
+    parent.parentElement.offsetWidth === parent.offsetWidth
   ) {
-    parentElement = parentElement.parentNode;
+    parent = parent.parentElement;
   }
 
   media.classList.add("vcs-dragging");
   shadowController.classList.add("dragging");
 
-  const initialMouseXY = [e.clientX, e.clientY];
-  const initialControllerXY = [
+  const [left, top] = [
     parseInt(shadowController.style.left),
     parseInt(shadowController.style.top),
   ];
 
-  const startDragging = (e) => {
-    const style = shadowController.style;
-    const dx = e.clientX - initialMouseXY[0];
-    const dy = e.clientY - initialMouseXY[1];
-    style.left = initialControllerXY[0] + dx + "px";
-    style.top = initialControllerXY[1] + dy + "px";
+  const startDragging = (target: MouseEvent) => {
+    const dx = target.clientX - event.clientX;
+    const dy = target.clientY - event.clientY;
+
+    shadowController.style.left = `${left + dx}px`;
+    shadowController.style.top = `${top + dy}px`;
   };
 
   const stopDragging = () => {
-    parentElement.removeEventListener("mousemove", startDragging);
-    parentElement.removeEventListener("mouseup", stopDragging);
-    parentElement.removeEventListener("mouseleave", stopDragging);
+    parent.removeEventListener("mousemove", startDragging);
+    parent.removeEventListener("mouseup", stopDragging);
+    parent.removeEventListener("mouseleave", stopDragging);
 
-    shadowController.classList.remove("dragging");
     media.classList.remove("vcs-dragging");
+    shadowController.classList.remove("dragging");
   };
 
-  parentElement.addEventListener("mouseup", stopDragging);
-  parentElement.addEventListener("mouseleave", stopDragging);
-  parentElement.addEventListener("mousemove", startDragging);
+  parent.addEventListener("mousemove", startDragging);
+  parent.addEventListener("mouseup", stopDragging);
+  parent.addEventListener("mouseleave", stopDragging);
 }
