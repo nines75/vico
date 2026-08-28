@@ -190,6 +190,8 @@ export class Controller {
 
     const div = document.createElement("div");
     div.id = "controller";
+    div.style.top = `${Math.max(this.media.offsetTop, 0)}px`;
+    div.style.left = `${Math.max(this.media.offsetLeft, 0)}px`;
     div.style.opacity = settings.controllerOpacity.toString();
     div.textContent = this.media.playbackRate.toFixed(2);
 
