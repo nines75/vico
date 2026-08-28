@@ -1,7 +1,6 @@
 export interface Settings {
   enabled: boolean;
   speed: number;
-  displayKeyCode: number;
   startHidden: boolean;
   controllerOpacity: number;
   blacklist: string;
