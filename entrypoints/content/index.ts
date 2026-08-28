@@ -16,7 +16,16 @@ export default defineContentScript({
     // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
     settings = await loadSettings();
 
-    initHandler(document);
+    if (isBlacklisted()) return;
+
+    if (document.readyState === "complete") {
+      init();
+      return;
+    }
+
+    document.addEventListener("readystatechange", () => {
+      if (document.readyState === "complete") init();
+    });
   },
 });
 
@@ -24,98 +33,55 @@ export default defineContentScript({
 // initializer
 // -------------------------------------------------------------------------------------------
 
-function initHandler(target: Document) {
-  if (isBlacklisted()) {
-    return;
-  }
-
-  window.addEventListener("load", () => {
-    init(globalThis.document);
-  });
-
-  if (target.readyState === "complete") {
-    init(target);
-  } else {
-    target.addEventListener("readystatechange", () => {
-      if (target.readyState === "complete") {
-        init(target);
-      }
-    });
-  }
-}
-
-function init(target: Document) {
-  if (!settings.enabled || target.body.classList.contains("vsc-initialized"))
+function init() {
+  if (!settings.enabled || document.body.classList.contains("vsc-initialized"))
     return;
 
   setupListener();
 
-  target.body.classList.add("vsc-initialized");
+  document.body.classList.add("vsc-initialized");
 
-  if (target !== globalThis.document) {
-    const link = target.createElement("link");
-    link.href = browser.runtime.getURL("/assets/inject.css" as PublicPath);
-    link.type = "text/css";
-    link.rel = "stylesheet";
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      const element = event.target;
+      if (!(element instanceof HTMLElement)) return;
 
-    target.head.append(link);
-  }
+      const keyCode = event.keyCode;
 
-  const docs = [target];
+      // Ignore if following modifier is active.
+      if (event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
 
-  // if iframe
-  if (globalThis.self !== window.top && window.top !== null) {
-    // should use try-catch because throw error if cross-origin iframe
-    try {
-      docs.push(window.top.document);
-    } catch {
-      // empty
-    }
-  }
+      // Ignore keydown event if typing in an input box
+      if (
+        element instanceof HTMLInputElement ||
+        element instanceof HTMLTextAreaElement ||
+        element.isContentEditable
+      )
+        return;
 
-  for (const doc of docs) {
-    doc.addEventListener(
-      "keydown",
-      (event) => {
-        const element = event.target;
-        if (!(element instanceof HTMLElement)) return;
+      // Ignore keydown event if typing in a page without vsc
+      if (mediaElements.length === 0) return;
 
-        const keyCode = event.keyCode;
+      const item = objectEntries(settings.keyBindings).find(
+        ([, keyBinding]) => keyBinding.key === keyCode,
+      );
+      if (item !== undefined) {
+        const [action, keyBinding] = item;
 
-        // Ignore if following modifier is active.
-        if (event.altKey || event.ctrlKey || event.metaKey) {
-          return;
+        runAction({ action, value: keyBinding.value });
+
+        if (keyBinding.force) {
+          // disable websites key bindings
+          event.preventDefault();
+          event.stopPropagation();
         }
-
-        // Ignore keydown event if typing in an input box
-        if (
-          element instanceof HTMLInputElement ||
-          element instanceof HTMLTextAreaElement ||
-          element.isContentEditable
-        )
-          return;
-
-        // Ignore keydown event if typing in a page without vsc
-        if (mediaElements.length === 0) return;
-
-        const item = objectEntries(settings.keyBindings).find(
-          ([, keyBinding]) => keyBinding.key === keyCode,
-        );
-        if (item !== undefined) {
-          const [action, keyBinding] = item;
-
-          runAction({ action, value: keyBinding.value });
-
-          if (keyBinding.force) {
-            // disable websites key bindings
-            event.preventDefault();
-            event.stopPropagation();
-          }
-        }
-      },
-      { capture: true },
-    );
-  }
+      }
+    },
+    { capture: true },
+  );
 
   // recursively assign controller
   const assignController = (node: Node, parent: Node) => {
@@ -135,7 +101,7 @@ function init(target: Document) {
   // recursively unassign controller
   const unassignController = (node: Node, parent: Node) => {
     // Only proceed with supposed removal if node is missing from DOM
-    if (target.body.contains(node)) return;
+    if (document.body.contains(node)) return;
 
     if (node instanceof HTMLMediaElement) {
       if (node.vsc !== undefined) {
@@ -153,29 +119,23 @@ function init(target: Document) {
   };
 
   const observer = new MutationObserver((mutations) => {
-    // Process the DOM nodes lazily
-    requestIdleCallback(
-      () => {
-        for (const mutation of mutations) {
-          if (mutation.type !== "childList") continue;
+    for (const mutation of mutations) {
+      if (mutation.type !== "childList") continue;
 
-          for (const node of mutation.addedNodes) {
-            assignController(node, node.parentNode ?? mutation.target);
-          }
-          for (const node of mutation.removedNodes) {
-            unassignController(node, node.parentNode ?? mutation.target);
-          }
-        }
-      },
-      { timeout: 1000 },
-    );
+      for (const node of mutation.addedNodes) {
+        assignController(node, node.parentNode ?? mutation.target);
+      }
+      for (const node of mutation.removedNodes) {
+        unassignController(node, node.parentNode ?? mutation.target);
+      }
+    }
   });
-  observer.observe(target, {
+  observer.observe(document, {
     childList: true,
     subtree: true,
   });
 
-  for (const media of target.querySelectorAll("video,audio")) {
+  for (const media of document.querySelectorAll("video,audio")) {
     if (media instanceof HTMLMediaElement) media.vsc ??= new Controller(media);
   }
 }
