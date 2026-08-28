@@ -34,9 +34,7 @@ export default defineContentScript({
 // -------------------------------------------------------------------------------------------
 
 function init() {
-  for (const media of document.querySelectorAll("video,audio")) {
-    if (media instanceof HTMLMediaElement) media.vsc ??= new Controller(media);
-  }
+  assignController(...document.querySelectorAll("video,audio"));
 
   document.addEventListener(
     "ratechange",
@@ -95,50 +93,20 @@ function init() {
     { capture: true },
   );
 
-  // recursively assign controller
-  const assignController = (node: Node) => {
-    if (node instanceof HTMLMediaElement) {
-      node.vsc ??= new Controller(node);
-
-      return;
-    }
-
-    if (node instanceof HTMLElement) {
-      for (const child of node.children) {
-        assignController(child);
-      }
-    }
-  };
-
-  // recursively unassign controller
-  const unassignController = (node: Node) => {
-    // Only proceed with supposed removal if node is missing from DOM
-    if (document.body.contains(node)) return;
-
-    if (node instanceof HTMLMediaElement) {
-      if (node.vsc !== undefined) {
-        node.vsc.remove();
-      }
-
-      return;
-    }
-
-    if (node instanceof HTMLElement) {
-      for (const child of node.children) {
-        unassignController(child);
-      }
-    }
-  };
-
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
-      if (mutation.type !== "childList") continue;
-
       for (const node of mutation.addedNodes) {
+        if (!(node instanceof HTMLElement)) continue;
+
         assignController(node);
+        assignController(...node.querySelectorAll("video,audio"));
       }
+
       for (const node of mutation.removedNodes) {
+        if (!(node instanceof HTMLElement)) continue;
+
         unassignController(node);
+        unassignController(...node.querySelectorAll("video,audio"));
       }
     }
   });
@@ -146,6 +114,22 @@ function init() {
     childList: true,
     subtree: true,
   });
+}
+
+function assignController(...nodes: Node[]) {
+  for (const node of nodes) {
+    if (node instanceof HTMLMediaElement) {
+      node.vsc ??= new Controller(node);
+    }
+  }
+}
+
+function unassignController(...nodes: Node[]) {
+  for (const node of nodes) {
+    if (node instanceof HTMLMediaElement && !node.isConnected) {
+      node.vsc?.remove();
+    }
+  }
 }
 
 // -------------------------------------------------------------------------------------------
