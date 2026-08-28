@@ -62,7 +62,7 @@ function init(target: Document) {
 
   if (target !== globalThis.document) {
     const link = target.createElement("link");
-    link.href = browser.runtime.getURL("/inject.css");
+    link.href = browser.runtime.getURL("/assets/inject.css" as PublicPath);
     link.type = "text/css";
     link.rel = "stylesheet";
 
@@ -72,8 +72,14 @@ function init(target: Document) {
   const docs = [target];
 
   // if iframe
-  if (globalThis.self !== window.top && window.top !== null)
-    docs.push(window.top.document);
+  if (globalThis.self !== window.top && window.top !== null) {
+    // should use try-catch because throw error if cross-origin iframe
+    try {
+      docs.push(window.top.document);
+    } catch {
+      // empty
+    }
+  }
 
   for (const doc of docs) {
     doc.addEventListener(
@@ -274,6 +280,24 @@ export class Controller {
     this.host = this.createGui(parent);
 
     mediaElements.push(media);
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        console.log("mutation of A/V element", 5);
+
+        const target = mutation.target;
+        if (!(target instanceof HTMLMediaElement)) continue;
+
+        this.host.classList.toggle(
+          "vsc-nosource",
+          target.src === "" && target.currentSrc === "",
+        );
+      }
+    });
+    observer.observe(media, {
+      attributes: true,
+      attributeFilter: ["src", "currentSrc"],
+    });
   }
 
   remove() {
