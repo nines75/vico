@@ -7,7 +7,6 @@ import type { PublicPath } from "wxt/browser";
 
 let settings: Settings;
 let timerId = 0;
-const mediaElements: HTMLMediaElement[] = [];
 
 export default defineContentScript({
   allFrames: true,
@@ -34,7 +33,7 @@ export default defineContentScript({
 // -------------------------------------------------------------------------------------------
 
 function init() {
-  assignController(...document.querySelectorAll("video,audio"));
+  assignController(...getMediaElements());
 
   document.addEventListener(
     "ratechange",
@@ -72,9 +71,6 @@ function init() {
       )
         return;
 
-      // Ignore keydown event if typing in a page without vsc
-      if (mediaElements.length === 0) return;
-
       const item = objectEntries(settings.keyBindings).find(
         ([, keyBinding]) => keyBinding.key === event.keyCode,
       );
@@ -99,14 +95,14 @@ function init() {
         if (!(node instanceof HTMLElement)) continue;
 
         assignController(node);
-        assignController(...node.querySelectorAll("video,audio"));
+        assignController(...getMediaElements());
       }
 
       for (const node of mutation.removedNodes) {
         if (!(node instanceof HTMLElement)) continue;
 
         unassignController(node);
-        unassignController(...node.querySelectorAll("video,audio"));
+        unassignController(...getMediaElements());
       }
     }
   });
@@ -142,7 +138,6 @@ export class Controller {
 
   constructor(media: HTMLMediaElement) {
     this.media = media;
-    mediaElements.push(media);
 
     const wrapper = this.media.ownerDocument.createElement("div");
     wrapper.classList.add("vsc-controller");
@@ -226,11 +221,6 @@ export class Controller {
     this.host.remove();
 
     delete this.media.vsc;
-
-    const index = mediaElements.indexOf(this.media);
-    if (index !== -1) {
-      mediaElements.splice(index, 1);
-    }
   }
 }
 
@@ -270,6 +260,8 @@ function runAction(
     | { action: "blink" }
     | { action: "drag"; event: MouseEvent },
 ) {
+  const mediaElements = getMediaElements();
+
   for (const media of mediaElements) {
     const host = media.vsc?.host;
     if (host === undefined) continue;
@@ -351,6 +343,18 @@ function runAction(
       }
     }
   }
+}
+
+function getMediaElements(): HTMLMediaElement[] {
+  const elements: HTMLMediaElement[] = [];
+
+  for (const element of document.querySelectorAll("video,audio")) {
+    if (element instanceof HTMLMediaElement) {
+      elements.push(element);
+    }
+  }
+
+  return elements;
 }
 
 function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
