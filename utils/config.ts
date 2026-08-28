@@ -4,7 +4,7 @@ export const defaultSettings: Settings = {
   enabled: true,
   speed: 1,
   startHidden: false,
-  controllerOpacity: 0.3,
+  controllerOpacity: 0.5,
   blacklist: "",
   keyBindings: {
     display: {
