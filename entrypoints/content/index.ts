@@ -377,15 +377,15 @@ function runAction(
     | { action: "drag"; event: MouseEvent },
 ) {
   for (const media of mediaElements) {
-    const gui = media.vsc?.host;
-    if (gui === undefined) continue;
+    const host = media.vsc?.host;
+    if (host === undefined) continue;
 
-    gui.classList.add("vcs-show");
+    host.classList.add("vcs-show");
 
     if (timerId > 0) clearTimeout(timerId);
 
     timerId = setTimeout(() => {
-      gui.classList.remove("vcs-show");
+      host.classList.remove("vcs-show");
       timerId = 0;
     }, 2000);
 
@@ -425,8 +425,8 @@ function runAction(
         break;
       }
       case "display": {
-        gui.classList.add("vsc-manual");
-        gui.classList.toggle("vsc-hidden");
+        host.classList.add("vsc-manual");
+        host.classList.toggle("vsc-hidden");
 
         break;
       }
@@ -435,14 +435,14 @@ function runAction(
 
         // if vsc is hidden, show it briefly to give the use visual feedback that the action is excuted.
         if (
-          gui.classList.contains("vsc-hidden") ||
+          host.classList.contains("vsc-hidden") ||
           media.vsc.blinkTimeOut !== undefined
         ) {
           clearTimeout(media.vsc.blinkTimeOut);
-          gui.classList.remove("vsc-hidden");
+          host.classList.remove("vsc-hidden");
 
           media.vsc.blinkTimeOut = setTimeout(() => {
-            gui.classList.add("vsc-hidden");
+            host.classList.add("vsc-hidden");
 
             if (media.vsc !== undefined) media.vsc.blinkTimeOut = undefined;
           }, 1000);
@@ -460,13 +460,13 @@ function runAction(
 }
 
 function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
-  const gui = media.vsc?.host;
-  if (gui === undefined) return;
+  const host = media.vsc?.host;
+  if (host === undefined) return;
 
-  const shadowController = gui.shadowRoot?.querySelector("#controller");
+  const shadowController = host.shadowRoot?.querySelector("#controller");
   if (!(shadowController instanceof HTMLElement)) return;
 
-  const directParent = gui.parentElement;
+  const directParent = host.parentElement;
   if (directParent === null) return;
 
   // Find nearest parent of same size as video parent.
