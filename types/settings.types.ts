@@ -5,8 +5,6 @@ export interface Settings {
   startHidden: boolean;
   controllerOpacity: number;
   blacklist: string;
-  defaultLogLevel: number;
-  logLevel: number;
   keyBindings: Record<KeyBindingName, KeyBinding>;
 }
 

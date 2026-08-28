@@ -6,8 +6,6 @@ export const defaultSettings: Settings = {
   displayKeyCode: 86,
   startHidden: false,
   controllerOpacity: 0.3,
-  defaultLogLevel: 4,
-  logLevel: 1,
   blacklist: "",
   keyBindings: {
     display: {
