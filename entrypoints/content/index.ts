@@ -178,15 +178,6 @@ function init(target: Document) {
   for (const media of target.querySelectorAll("video,audio")) {
     if (media instanceof HTMLMediaElement) media.vsc ??= new Controller(media);
   }
-
-  const iframes = target.querySelectorAll("iframe");
-  for (const iframe of iframes) {
-    // Ignore frames we don't have permission to access (different origin).
-    const contentDocument = iframe.contentDocument;
-    if (contentDocument === null) continue;
-
-    initHandler(contentDocument);
-  }
 }
 
 function setupListener() {
