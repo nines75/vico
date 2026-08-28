@@ -242,23 +242,24 @@ export class Controller {
       wrapper.classList.add("vsc-hidden");
     }
 
-    const shadow = wrapper.attachShadow({ mode: "open" });
-    const shadowTemplate = `
-        <style>
-          @import "${browser.runtime.getURL("/assets/shadow.css" as PublicPath)}";
-        </style>
+    const shadowRoot = wrapper.attachShadow({ mode: "open" });
+    const fragment = new DocumentFragment();
 
-        <div id="controller" style="top:${top}; left:${left}; opacity:${
-          settings.controllerOpacity
-        }">
-          ${speed}
-        </div>
-      `;
+    const style = document.createElement("style");
+    style.textContent = `@import "${browser.runtime.getURL("/assets/shadow.css" as PublicPath)}";`;
 
-    shadow.innerHTML = shadowTemplate;
+    const div = document.createElement("div");
+    div.id = "controller";
+    div.style.top = top;
+    div.style.left = left;
+    div.style.opacity = settings.controllerOpacity.toString();
+    div.textContent = speed;
+
+    fragment.append(style, div);
+    shadowRoot.append(fragment);
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const root = shadow.querySelector("#controller")!;
+    const root = shadowRoot.querySelector("#controller")!;
     this.root = root;
 
     if (root instanceof HTMLElement) {
