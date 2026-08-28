@@ -455,8 +455,8 @@ function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
   const host = media.vsc?.host;
   if (host === undefined) return;
 
-  const shadowController = host.shadowRoot?.querySelector("#controller");
-  if (!(shadowController instanceof HTMLElement)) return;
+  const root = media.vsc?.root;
+  if (!(root instanceof HTMLElement)) return;
 
   const directParent = host.parentElement;
   if (directParent === null) return;
@@ -472,19 +472,16 @@ function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
   }
 
   media.classList.add("vcs-dragging");
-  shadowController.classList.add("dragging");
+  root.classList.add("dragging");
 
-  const [left, top] = [
-    parseInt(shadowController.style.left),
-    parseInt(shadowController.style.top),
-  ];
+  const [left, top] = [parseInt(root.style.left), parseInt(root.style.top)];
 
   const startDragging = (target: MouseEvent) => {
     const dx = target.clientX - event.clientX;
     const dy = target.clientY - event.clientY;
 
-    shadowController.style.left = `${left + dx}px`;
-    shadowController.style.top = `${top + dy}px`;
+    root.style.left = `${left + dx}px`;
+    root.style.top = `${top + dy}px`;
   };
 
   const stopDragging = () => {
@@ -493,7 +490,7 @@ function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
     parent.removeEventListener("mouseleave", stopDragging);
 
     media.classList.remove("vcs-dragging");
-    shadowController.classList.remove("dragging");
+    root.classList.remove("dragging");
   };
 
   parent.addEventListener("mousemove", startDragging);
