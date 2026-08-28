@@ -351,8 +351,6 @@ function setSpeed(video: HTMLMediaElement, speed: number) {
   const speedvalue = speed.toFixed(2);
   video.playbackRate = Number(speedvalue);
 
-  if (video.vsc !== undefined) video.vsc.root.textContent = speedvalue;
-
   if (coolDownId > 0) {
     clearTimeout(coolDownId);
   }
