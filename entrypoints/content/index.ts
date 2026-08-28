@@ -96,22 +96,22 @@ function init() {
   );
 
   // recursively assign controller
-  const assignController = (node: Node, parent: Node) => {
+  const assignController = (node: Node) => {
     if (node instanceof HTMLMediaElement) {
-      node.vsc ??= new Controller(node, parent);
+      node.vsc ??= new Controller(node);
 
       return;
     }
 
     if (node instanceof HTMLElement) {
       for (const child of node.children) {
-        assignController(child, child.parentNode ?? parent);
+        assignController(child);
       }
     }
   };
 
   // recursively unassign controller
-  const unassignController = (node: Node, parent: Node) => {
+  const unassignController = (node: Node) => {
     // Only proceed with supposed removal if node is missing from DOM
     if (document.body.contains(node)) return;
 
@@ -125,7 +125,7 @@ function init() {
 
     if (node instanceof HTMLElement) {
       for (const child of node.children) {
-        unassignController(child, child.parentNode ?? parent);
+        unassignController(child);
       }
     }
   };
@@ -135,10 +135,10 @@ function init() {
       if (mutation.type !== "childList") continue;
 
       for (const node of mutation.addedNodes) {
-        assignController(node, node.parentNode ?? mutation.target);
+        assignController(node);
       }
       for (const node of mutation.removedNodes) {
-        unassignController(node, node.parentNode ?? mutation.target);
+        unassignController(node);
       }
     }
   });
@@ -156,7 +156,7 @@ export class Controller {
   public root: Element;
   public blinkTimeOut: number | undefined;
 
-  constructor(media: HTMLMediaElement, parent?: Node) {
+  constructor(media: HTMLMediaElement) {
     this.media = media;
     mediaElements.push(media);
 
@@ -217,8 +217,7 @@ export class Controller {
       { capture: false },
     );
 
-    const insertTarget = this.media.parentElement ?? parent;
-    insertTarget?.insertBefore(wrapper, insertTarget.firstChild);
+    this.media.parentElement?.prepend(wrapper);
 
     this.host = wrapper;
 
