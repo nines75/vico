@@ -7,7 +7,6 @@ import type { PublicPath } from "wxt/browser";
 
 let settings: Settings;
 let timerId = 0;
-let coolDownId = 0;
 const mediaElements: HTMLMediaElement[] = [];
 
 export default defineContentScript({
@@ -194,18 +193,13 @@ function setupListener() {
   document.addEventListener(
     "ratechange",
     (event) => {
-      if (coolDownId > 0) {
-        event.stopImmediatePropagation();
-      }
-
       // It's possible to get a rate change on a VIDEO/AUDIO that doesn't have
       // a video controller attached to it. If we do, ignore it.
-      const video = event.target;
-      if (!(video instanceof HTMLMediaElement) || video.vsc === undefined)
+      const media = event.target;
+      if (!(media instanceof HTMLMediaElement) || media.vsc === undefined)
         return;
 
-      const speed = Number(video.playbackRate.toFixed(2));
-      video.vsc.root.textContent = speed.toFixed(2);
+      media.vsc.root.textContent = media.playbackRate.toFixed(2);
 
       // show the controller for 1000ms if it's hidden.
       runAction({ action: "blink" });
@@ -225,8 +219,6 @@ export class Controller {
   constructor(media: HTMLMediaElement, parent?: Node) {
     this.media = media;
     mediaElements.push(media);
-
-    const speed = this.media.playbackRate.toFixed(2);
 
     const wrapper = this.media.ownerDocument.createElement("div");
     wrapper.classList.add("vsc-controller");
@@ -248,7 +240,7 @@ export class Controller {
     const div = document.createElement("div");
     div.id = "controller";
     div.style.opacity = settings.controllerOpacity.toString();
-    div.textContent = speed;
+    div.textContent = this.media.playbackRate.toFixed(2);
 
     fragment.append(style, div);
     shadowRoot.append(fragment);
@@ -347,19 +339,6 @@ function isBlacklisted() {
   return false;
 }
 
-function setSpeed(video: HTMLMediaElement, speed: number) {
-  const speedvalue = speed.toFixed(2);
-  video.playbackRate = Number(speedvalue);
-
-  if (coolDownId > 0) {
-    clearTimeout(coolDownId);
-  }
-
-  coolDownId = setTimeout(() => {
-    coolDownId = 0;
-  }, 1000);
-}
-
 function runAction(
   params:
     | { action: KeyBindingName; value: number }
@@ -398,19 +377,19 @@ function runAction(
           (media.playbackRate < 0.1 ? 0 : media.playbackRate) + params.value,
           16,
         );
-        setSpeed(media, speed);
+        media.playbackRate = speed;
 
         break;
       }
       case "slower": {
         // min rate is 0.0625
         const speed = Math.max(media.playbackRate - params.value, 0.07);
-        setSpeed(media, speed);
+        media.playbackRate = speed;
 
         break;
       }
       case "reset": {
-        setSpeed(media, 1);
+        media.playbackRate = 1;
 
         break;
       }
