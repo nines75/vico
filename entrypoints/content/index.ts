@@ -26,8 +26,6 @@ export default defineContentScript({
 // -------------------------------------------------------------------------------------------
 
 function initHandler(target: Document) {
-  log("Begin initializeWhenReady", 5);
-
   if (isBlacklisted()) {
     return;
   }
@@ -45,20 +43,15 @@ function initHandler(target: Document) {
       }
     });
   }
-
-  log("End initializeWhenReady", 5);
 }
 
 function init(target: Document) {
-  log("Begin initializeNow", 5);
-
   if (!settings.enabled || target.body.classList.contains("vsc-initialized"))
     return;
 
   setupListener();
 
   target.body.classList.add("vsc-initialized");
-  log("initializeNow: vsc-initialized added to document body", 5);
 
   if (target !== globalThis.document) {
     const link = target.createElement("link");
@@ -89,11 +82,9 @@ function init(target: Document) {
         if (!(element instanceof HTMLElement)) return;
 
         const keyCode = event.keyCode;
-        log(`Processing keydown event: ${keyCode}`, 6);
 
         // Ignore if following modifier is active.
         if (event.altKey || event.ctrlKey || event.metaKey) {
-          log(`Keydown event ignored due to active modifier: ${keyCode}`, 5);
           return;
         }
 
@@ -197,8 +188,6 @@ function init(target: Document) {
 
     initHandler(contentDocument);
   }
-
-  log("End initializeNow", 5);
 }
 
 function setupListener() {
@@ -206,7 +195,6 @@ function setupListener() {
     "ratechange",
     (event) => {
       if (coolDownId > 0) {
-        log("Speed event propagation blocked", 4);
         event.stopImmediatePropagation();
       }
 
@@ -217,11 +205,6 @@ function setupListener() {
         return;
 
       const speed = Number(video.playbackRate.toFixed(2));
-
-      log(`Playback rate changed to ${speed}`, 4);
-
-      log("Updating controller with new speed", 5);
-
       video.vsc.root.textContent = speed.toFixed(2);
 
       // show the controller for 1000ms if it's hidden.
@@ -232,42 +215,6 @@ function setupListener() {
 }
 
 // -------------------------------------------------------------------------------------------
-
-/* Log levels (depends on caller specifying the correct level)
-  1 - none
-  2 - error
-  3 - warning
-  4 - info
-  5 - debug
-  6 - debug high verbosity + stack trace on each message
-*/
-function log(message: string, level: number) {
-  if (settings.logLevel < level) return;
-
-  switch (level) {
-    case 2: {
-      console.log("ERROR:" + message);
-      break;
-    }
-    case 3: {
-      console.log("WARNING:" + message);
-      break;
-    }
-    case 4: {
-      console.log("INFO:" + message);
-      break;
-    }
-    case 5: {
-      console.log("DEBUG:" + message);
-      break;
-    }
-    case 6: {
-      console.log("DEBUG (VERBOSE):" + message);
-      console.trace();
-      break;
-    }
-  }
-}
 
 export class Controller {
   private media: HTMLMediaElement;
@@ -283,8 +230,6 @@ export class Controller {
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        console.log("mutation of A/V element", 5);
-
         const target = mutation.target;
         if (!(target instanceof HTMLMediaElement)) continue;
 
@@ -312,15 +257,11 @@ export class Controller {
   }
 
   createGui(parent: Node | undefined) {
-    log("initializeControls Begin", 5);
-
     const target = this.media.ownerDocument;
     const speed = this.media.playbackRate.toFixed(2);
 
     const top = `${Math.max(this.media.offsetTop, 0)}px`;
     const left = `${Math.max(this.media.offsetLeft, 0)}px`;
-
-    log("Speed variable set to: " + speed, 5);
 
     const wrapper = target.createElement("div");
     wrapper.classList.add("vsc-controller");
@@ -415,14 +356,10 @@ function isBlacklisted() {
 }
 
 function setSpeed(video: HTMLMediaElement, speed: number) {
-  log(`setSpeed started: ${speed}`, 5);
-
   const speedvalue = speed.toFixed(2);
   video.playbackRate = Number(speedvalue);
 
   if (video.vsc !== undefined) video.vsc.root.textContent = speedvalue;
-
-  log("Begin refreshCoolDown", 5);
 
   if (coolDownId > 0) {
     clearTimeout(coolDownId);
@@ -431,10 +368,6 @@ function setSpeed(video: HTMLMediaElement, speed: number) {
   coolDownId = setTimeout(() => {
     coolDownId = 0;
   }, 1000);
-
-  log("End refreshCoolDown", 5);
-
-  log(`setSpeed finished: ${speed}`, 5);
 }
 
 function runAction(
@@ -443,13 +376,10 @@ function runAction(
     | { action: "blink" }
     | { action: "drag"; event: MouseEvent },
 ) {
-  log("runAction Begin", 5);
-
   for (const media of mediaElements) {
     const gui = media.vsc?.host;
     if (gui === undefined) continue;
 
-    log("Showing controller", 4);
     gui.classList.add("vcs-show");
 
     if (timerId > 0) clearTimeout(timerId);
@@ -457,28 +387,22 @@ function runAction(
     timerId = setTimeout(() => {
       gui.classList.remove("vcs-show");
       timerId = 0;
-
-      log("Hiding controller", 5);
     }, 2000);
 
     if (media.classList.contains("vsc-cancelled")) continue;
 
     switch (params.action) {
       case "rewind": {
-        log("Rewind", 5);
         media.currentTime -= params.value;
 
         break;
       }
       case "advance": {
-        log("Fast forward", 5);
         media.currentTime += params.value;
 
         break;
       }
       case "faster": {
-        log("Increase speed", 5);
-
         // min rate is 16
         const speed = Math.min(
           (media.playbackRate < 0.1 ? 0 : media.playbackRate) + params.value,
@@ -489,8 +413,6 @@ function runAction(
         break;
       }
       case "slower": {
-        log("Decrease speed", 5);
-
         // min rate is 0.0625
         const speed = Math.max(media.playbackRate - params.value, 0.07);
         setSpeed(media, speed);
@@ -498,21 +420,17 @@ function runAction(
         break;
       }
       case "reset": {
-        log("Reset speed", 5);
         setSpeed(media, 1);
 
         break;
       }
       case "display": {
-        log("Showing controller", 5);
         gui.classList.add("vsc-manual");
         gui.classList.toggle("vsc-hidden");
 
         break;
       }
       case "blink": {
-        log("Showing controller momentarily", 5);
-
         if (media.vsc === undefined) break;
 
         // if vsc is hidden, show it briefly to give the use visual feedback that the action is excuted.
@@ -539,7 +457,6 @@ function runAction(
       }
     }
   }
-  log("runAction End", 5);
 }
 
 function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
