@@ -228,9 +228,6 @@ export class Controller {
 
     const speed = this.media.playbackRate.toFixed(2);
 
-    const top = `${Math.max(this.media.offsetTop, 0)}px`;
-    const left = `${Math.max(this.media.offsetLeft, 0)}px`;
-
     const wrapper = this.media.ownerDocument.createElement("div");
     wrapper.classList.add("vsc-controller");
 
@@ -250,8 +247,6 @@ export class Controller {
 
     const div = document.createElement("div");
     div.id = "controller";
-    div.style.top = top;
-    div.style.left = left;
     div.style.opacity = settings.controllerOpacity.toString();
     div.textContent = speed;
 
