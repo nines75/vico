@@ -34,12 +34,9 @@ export default defineContentScript({
 // -------------------------------------------------------------------------------------------
 
 function init() {
-  if (!settings.enabled || document.body.classList.contains("vsc-initialized"))
-    return;
+  if (!settings.enabled) return;
 
   setupListener();
-
-  document.body.classList.add("vsc-initialized");
 
   document.addEventListener(
     "keydown",
