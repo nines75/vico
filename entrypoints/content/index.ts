@@ -224,9 +224,73 @@ export class Controller {
 
   constructor(media: HTMLMediaElement, parent?: Node) {
     this.media = media;
-    this.host = this.createGui(parent);
-
     mediaElements.push(media);
+
+    const speed = this.media.playbackRate.toFixed(2);
+
+    const top = `${Math.max(this.media.offsetTop, 0)}px`;
+    const left = `${Math.max(this.media.offsetLeft, 0)}px`;
+
+    const wrapper = this.media.ownerDocument.createElement("div");
+    wrapper.classList.add("vsc-controller");
+
+    if (this.media.src === "" && this.media.currentSrc === "") {
+      wrapper.classList.add("vsc-nosource");
+    }
+
+    if (settings.startHidden) {
+      wrapper.classList.add("vsc-hidden");
+    }
+
+    const shadow = wrapper.attachShadow({ mode: "open" });
+    const shadowTemplate = `
+        <style>
+          @import "${browser.runtime.getURL("/assets/shadow.css" as PublicPath)}";
+        </style>
+
+        <div id="controller" style="top:${top}; left:${left}; opacity:${
+          settings.controllerOpacity
+        }">
+          ${speed}
+        </div>
+      `;
+
+    shadow.innerHTML = shadowTemplate;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const root = shadow.querySelector("#controller")!;
+    this.root = root;
+
+    if (root instanceof HTMLElement) {
+      root.addEventListener(
+        "mousedown",
+        (event) => {
+          runAction({ action: "drag", event });
+          event.stopPropagation();
+        },
+        { capture: true },
+      );
+    }
+
+    root.addEventListener(
+      "click",
+      (e) => {
+        e.stopPropagation();
+      },
+      { capture: false },
+    );
+    root.addEventListener(
+      "mousedown",
+      (e) => {
+        e.stopPropagation();
+      },
+      { capture: false },
+    );
+
+    const insertTarget = this.media.parentElement ?? parent;
+    insertTarget?.insertBefore(wrapper, insertTarget.firstChild);
+
+    this.host = wrapper;
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
@@ -254,74 +318,6 @@ export class Controller {
     if (index !== -1) {
       mediaElements.splice(index, 1);
     }
-  }
-
-  createGui(parent: Node | undefined) {
-    const target = this.media.ownerDocument;
-    const speed = this.media.playbackRate.toFixed(2);
-
-    const top = `${Math.max(this.media.offsetTop, 0)}px`;
-    const left = `${Math.max(this.media.offsetLeft, 0)}px`;
-
-    const wrapper = target.createElement("div");
-    wrapper.classList.add("vsc-controller");
-
-    if (this.media.src === "" && this.media.currentSrc === "") {
-      wrapper.classList.add("vsc-nosource");
-    }
-
-    if (settings.startHidden) {
-      wrapper.classList.add("vsc-hidden");
-    }
-
-    const shadow = wrapper.attachShadow({ mode: "open" });
-    const shadowTemplate = `
-        <style>
-          @import "${browser.runtime.getURL("/assets/shadow.css" as PublicPath)}";
-        </style>
-
-        <div id="controller" style="top:${top}; left:${left}; opacity:${
-          settings.controllerOpacity
-        }">
-          ${speed}
-        </div>
-      `;
-
-    shadow.innerHTML = shadowTemplate;
-
-    const root = shadow.querySelector("#controller");
-    if (root !== null) this.root = root;
-
-    if (root instanceof HTMLElement) {
-      root.addEventListener(
-        "mousedown",
-        (event) => {
-          runAction({ action: "drag", event });
-          event.stopPropagation();
-        },
-        { capture: true },
-      );
-    }
-
-    root?.addEventListener(
-      "click",
-      (e) => {
-        e.stopPropagation();
-      },
-      { capture: false },
-    );
-    root?.addEventListener(
-      "mousedown",
-      (e) => {
-        e.stopPropagation();
-      },
-      { capture: false },
-    );
-
-    const insertTarget = this.media.parentElement ?? parent;
-    insertTarget?.insertBefore(wrapper, insertTarget.firstChild);
-
-    return wrapper;
   }
 }
 
