@@ -16,7 +16,7 @@ export default defineContentScript({
     // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
     settings = await loadSettings();
 
-    if (isBlacklisted()) return;
+    if (isBlacklisted() || !settings.enabled) return;
 
     if (document.readyState === "complete") {
       init();
@@ -34,17 +34,32 @@ export default defineContentScript({
 // -------------------------------------------------------------------------------------------
 
 function init() {
-  if (!settings.enabled) return;
+  for (const media of document.querySelectorAll("video,audio")) {
+    if (media instanceof HTMLMediaElement) media.vsc ??= new Controller(media);
+  }
 
-  setupListener();
+  document.addEventListener(
+    "ratechange",
+    (event) => {
+      // It's possible to get a rate change on a VIDEO/AUDIO that doesn't have
+      // a video controller attached to it. If we do, ignore it.
+      const media = event.target;
+      if (!(media instanceof HTMLMediaElement) || media.vsc === undefined)
+        return;
+
+      media.vsc.root.textContent = media.playbackRate.toFixed(2);
+
+      // show the controller for 1000ms if it's hidden.
+      runAction({ action: "blink" });
+    },
+    { capture: true },
+  );
 
   document.addEventListener(
     "keydown",
     (event) => {
       const element = event.target;
       if (!(element instanceof HTMLElement)) return;
-
-      const keyCode = event.keyCode;
 
       // Ignore if following modifier is active.
       if (event.altKey || event.ctrlKey || event.metaKey) {
@@ -63,7 +78,7 @@ function init() {
       if (mediaElements.length === 0) return;
 
       const item = objectEntries(settings.keyBindings).find(
-        ([, keyBinding]) => keyBinding.key === keyCode,
+        ([, keyBinding]) => keyBinding.key === event.keyCode,
       );
       if (item !== undefined) {
         const [action, keyBinding] = item;
@@ -131,29 +146,6 @@ function init() {
     childList: true,
     subtree: true,
   });
-
-  for (const media of document.querySelectorAll("video,audio")) {
-    if (media instanceof HTMLMediaElement) media.vsc ??= new Controller(media);
-  }
-}
-
-function setupListener() {
-  document.addEventListener(
-    "ratechange",
-    (event) => {
-      // It's possible to get a rate change on a VIDEO/AUDIO that doesn't have
-      // a video controller attached to it. If we do, ignore it.
-      const media = event.target;
-      if (!(media instanceof HTMLMediaElement) || media.vsc === undefined)
-        return;
-
-      media.vsc.root.textContent = media.playbackRate.toFixed(2);
-
-      // show the controller for 1000ms if it's hidden.
-      runAction({ action: "blink" });
-    },
-    { capture: true },
-  );
 }
 
 // -------------------------------------------------------------------------------------------
