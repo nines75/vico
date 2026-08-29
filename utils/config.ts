@@ -12,14 +12,6 @@ export const defaultSettings: Settings = {
       key: "d",
       value: 0.5,
     },
-    rewind: {
-      key: "z",
-      value: 10,
-    },
-    advance: {
-      key: "x",
-      value: 10,
-    },
     reset: {
       key: "r",
       value: 1,

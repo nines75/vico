@@ -147,18 +147,6 @@ function runAction(type: KeyBindingName, value: number) {
 
   for (const media of mediaElements) {
     switch (type) {
-      case "rewind": {
-        media.currentTime -= value;
-        postMessage(`-${value}`);
-
-        break;
-      }
-      case "advance": {
-        media.currentTime += value;
-        postMessage(`+${value}`);
-
-        break;
-      }
       case "faster": {
         const baseSpeed = media.playbackRate < 0.1 ? 0 : media.playbackRate;
         const speed = Math.min(baseSpeed + value, 16); // max rate is 16

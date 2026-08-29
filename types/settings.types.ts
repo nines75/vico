@@ -4,8 +4,7 @@ export interface Settings {
   keyBindings: Record<KeyBindingName, KeyBinding>;
 }
 
-export type KeyBindingName =
-  "slower" | "faster" | "rewind" | "advance" | "reset";
+export type KeyBindingName = "slower" | "faster" | "reset";
 
 interface KeyBinding {
   key: string;
