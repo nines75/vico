@@ -3,7 +3,7 @@ import type { Settings } from "@/types/settings.types";
 export const defaultSettings: Settings = {
   enabled: true,
   blacklist: "",
-  keyBindings: {
+  keybindings: {
     slower: {
       key: "s",
       value: 0.5,

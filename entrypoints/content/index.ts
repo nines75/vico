@@ -1,6 +1,6 @@
 import { createShadowRootUi, defineContentScript } from "#imports";
 import { loadSettings } from "@/utils/storage";
-import type { KeyBindingName, Settings } from "@/types/settings.types";
+import type { KeybindingName, Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
 import debounce from "debounce";
 import "./overlay.css";
@@ -71,14 +71,14 @@ function init(settings: Settings) {
       )
         return;
 
-      const item = objectEntries(settings.keyBindings).find(
-        ([, keyBinding]) => keyBinding.key === event.key.toLowerCase(),
+      const item = objectEntries(settings.keybindings).find(
+        ([, keybinding]) => keybinding.key === event.key.toLowerCase(),
       );
       if (item === undefined) return;
 
-      const [type, keyBinding] = item;
+      const [type, keybinding] = item;
 
-      runAction(type, keyBinding.value);
+      runAction(type, keybinding.value);
     },
     { capture: true },
   );
@@ -136,7 +136,7 @@ function postMessage(message: string) {
   globalThis.top?.postMessage({ type: "vico-show-overlay", message }, "*");
 }
 
-function runAction(type: KeyBindingName, value: number) {
+function runAction(type: KeybindingName, value: number) {
   const mediaElements: HTMLMediaElement[] = [];
 
   for (const element of document.querySelectorAll("video,audio")) {

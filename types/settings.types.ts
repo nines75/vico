@@ -1,12 +1,12 @@
 export interface Settings {
   enabled: boolean;
   blacklist: string;
-  keyBindings: Record<KeyBindingName, KeyBinding>;
+  keybindings: Record<KeybindingName, Keybinding>;
 }
 
-export type KeyBindingName = "slower" | "faster" | "reset";
+export type KeybindingName = "slower" | "faster" | "reset";
 
-interface KeyBinding {
+interface Keybinding {
   key: string;
   value: number;
 }
