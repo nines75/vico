@@ -10,7 +10,7 @@ export default defineConfig({
     const isDevelopment = mode === "development";
 
     return {
-      permissions: ["notifications", "storage"],
+      permissions: ["storage"],
       commands: {
         "open-settings": {
           description: "open settings",
