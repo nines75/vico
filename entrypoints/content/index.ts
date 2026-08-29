@@ -79,12 +79,6 @@ function init(settings: Settings) {
       const [type, keyBinding] = item;
 
       runAction(type, keyBinding.value);
-
-      if (keyBinding.force) {
-        // disable websites key bindings
-        event.preventDefault();
-        event.stopPropagation();
-      }
     },
     { capture: true },
   );

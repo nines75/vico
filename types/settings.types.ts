@@ -10,5 +10,4 @@ export type KeyBindingName =
 interface KeyBinding {
   key: number;
   value: number;
-  force: boolean;
 }
