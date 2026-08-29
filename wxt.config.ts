@@ -12,14 +12,13 @@ export default defineConfig({
     return {
       permissions: ["storage"],
       commands: {
-        "open-settings": {
+        _execute_browser_action: {
           description: "open settings",
           suggested_key: isDevelopment ? { default: "Alt+O" } : {},
         },
-        _execute_browser_action: {
-          description: "open popup",
-          suggested_key: isDevelopment ? { default: "Alt+K" } : {},
-        },
+      },
+      browser_action: {
+        default_title: "open vico settings",
       },
       browser_specific_settings: {
         gecko: {
