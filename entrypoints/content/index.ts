@@ -5,15 +5,12 @@ import { objectEntries } from "ts-extras";
 import debounce from "debounce";
 import "./overlay.css";
 
-let settings: Settings;
-
 export default defineContentScript({
   allFrames: true,
   matches: ["http://*/*", "https://*/*", "file:///*"],
   cssInjectionMode: "ui",
   async main(ctx) {
-    // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
-    settings = await loadSettings();
+    const settings = await loadSettings();
 
     if (globalThis.self === window.top) {
       const elements = document.querySelectorAll("vico-overlay");
@@ -42,15 +39,15 @@ export default defineContentScript({
       });
     }
 
-    if (isBlacklisted() || !settings.enabled) return;
+    if (isBlacklisted(settings) || !settings.enabled) return;
 
     if (document.readyState === "complete") {
-      init();
+      init(settings);
       return;
     }
 
     document.addEventListener("readystatechange", () => {
-      if (document.readyState === "complete") init();
+      if (document.readyState === "complete") init(settings);
     });
   },
 });
@@ -59,7 +56,7 @@ export default defineContentScript({
 // initializer
 // -------------------------------------------------------------------------------------------
 
-function init() {
+function init(settings: Settings) {
   document.addEventListener(
     "keydown",
     (event) => {
@@ -100,7 +97,7 @@ function init() {
 
 // -------------------------------------------------------------------------------------------
 
-function isBlacklisted() {
+function isBlacklisted(settings: Settings) {
   for (const line of settings.blacklist.split("\n")) {
     if (line === "") continue;
 
