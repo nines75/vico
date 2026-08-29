@@ -6,19 +6,6 @@ export default defineConfig({
   zip: {
     artifactTemplate: "firefox.xpi",
   },
-  vite: ({ mode }) => {
-    const isProduction = mode === "production";
-
-    return {
-      build: {
-        ...(isProduction && {
-          license: {
-            fileName: `license-${crypto.randomUUID()}.json`,
-          },
-        }),
-      },
-    };
-  },
   manifest: ({ mode }) => {
     const isDevelopment = mode === "development";
 
