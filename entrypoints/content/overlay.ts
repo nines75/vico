@@ -22,24 +22,21 @@ export async function setupOverlay(ctx: ContentScriptContext) {
 
   window.addEventListener("message", (event) => {
     const data = event.data as { type: string; message: string };
+
     if (data.type === "vico-show-overlay") {
-      showOverlay(data.message);
+      const host = document.querySelector("vico-overlay");
+      const overlay = host?.shadowRoot?.querySelector(".overlay");
+
+      if (overlay instanceof HTMLElement) {
+        overlay.textContent = data.message;
+        overlay.classList.add("visible");
+
+        hideOverlay(overlay);
+      }
     }
   });
 }
 
-const showOverlay = (message: string) => {
-  const host = document.querySelector("vico-overlay");
-  const overlay = host?.shadowRoot?.querySelector(".overlay");
-
-  if (overlay instanceof HTMLElement) {
-    overlay.textContent = message;
-    overlay.classList.add("visible");
-
-    hideOverlay(overlay);
-  }
-};
-
-const hideOverlay = debounce((host: HTMLElement) => {
-  host.classList.remove("visible");
+const hideOverlay = debounce((overlay: HTMLElement) => {
+  overlay.classList.remove("visible");
 }, 2000);
