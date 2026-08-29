@@ -72,7 +72,7 @@ function init(settings: Settings) {
         return;
 
       const item = objectEntries(settings.keyBindings).find(
-        ([, keyBinding]) => keyBinding.key === event.keyCode,
+        ([, keyBinding]) => keyBinding.key === event.key.toLowerCase(),
       );
       if (item === undefined) return;
 

@@ -8,6 +8,6 @@ export type KeyBindingName =
   "slower" | "faster" | "rewind" | "advance" | "reset";
 
 interface KeyBinding {
-  key: number;
+  key: string;
   value: number;
 }

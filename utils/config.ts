@@ -5,23 +5,23 @@ export const defaultSettings: Settings = {
   blacklist: "",
   keyBindings: {
     slower: {
-      key: 83, // S
+      key: "s",
       value: 0.5,
     },
     faster: {
-      key: 68, // D
+      key: "d",
       value: 0.5,
     },
     rewind: {
-      key: 90, // Z
+      key: "z",
       value: 10,
     },
     advance: {
-      key: 88, // X
+      key: "x",
       value: 10,
     },
     reset: {
-      key: 82, // R
+      key: "r",
       value: 1,
     },
   },
