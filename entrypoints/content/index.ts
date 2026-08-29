@@ -60,16 +60,11 @@ function init(settings: Settings) {
   document.addEventListener(
     "keydown",
     (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+
       const element = event.target;
-      if (!(element instanceof HTMLElement)) return;
-
-      // Ignore if following modifier is active.
-      if (event.altKey || event.ctrlKey || event.metaKey) {
-        return;
-      }
-
-      // Ignore keydown event if typing in an input box
       if (
+        !(element instanceof HTMLElement) ||
         element instanceof HTMLInputElement ||
         element instanceof HTMLTextAreaElement ||
         element.isContentEditable
@@ -79,16 +74,16 @@ function init(settings: Settings) {
       const item = objectEntries(settings.keyBindings).find(
         ([, keyBinding]) => keyBinding.key === event.keyCode,
       );
-      if (item !== undefined) {
-        const [type, keyBinding] = item;
+      if (item === undefined) return;
 
-        runAction(type, keyBinding.value);
+      const [type, keyBinding] = item;
 
-        if (keyBinding.force) {
-          // disable websites key bindings
-          event.preventDefault();
-          event.stopPropagation();
-        }
+      runAction(type, keyBinding.value);
+
+      if (keyBinding.force) {
+        // disable websites key bindings
+        event.preventDefault();
+        event.stopPropagation();
       }
     },
     { capture: true },
@@ -148,7 +143,13 @@ function postMessage(message: string) {
 }
 
 function runAction(type: KeyBindingName, value: number) {
-  const mediaElements = getMediaElements();
+  const mediaElements: HTMLMediaElement[] = [];
+
+  for (const element of document.querySelectorAll("video,audio")) {
+    if (element instanceof HTMLMediaElement) {
+      mediaElements.push(element);
+    }
+  }
 
   for (const media of mediaElements) {
     switch (type) {
@@ -189,16 +190,4 @@ function runAction(type: KeyBindingName, value: number) {
       }
     }
   }
-}
-
-function getMediaElements(): HTMLMediaElement[] {
-  const elements: HTMLMediaElement[] = [];
-
-  for (const element of document.querySelectorAll("video,audio")) {
-    if (element instanceof HTMLMediaElement) {
-      elements.push(element);
-    }
-  }
-
-  return elements;
 }
