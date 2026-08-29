@@ -11,5 +11,4 @@ interface KeyBinding {
   key: number;
   value: number;
   force: boolean;
-  predefined: boolean;
 }
