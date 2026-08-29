@@ -2,17 +2,8 @@ import type { Settings } from "@/types/settings.types";
 
 export const defaultSettings: Settings = {
   enabled: true,
-  speed: 1,
-  startHidden: false,
-  controllerOpacity: 0.5,
   blacklist: "",
   keyBindings: {
-    display: {
-      key: 86, // V
-      value: 0,
-      force: false,
-      predefined: true,
-    },
     slower: {
       key: 83, // S
       value: 0.5,

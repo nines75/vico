@@ -1,14 +1,11 @@
 export interface Settings {
   enabled: boolean;
-  speed: number;
-  startHidden: boolean;
-  controllerOpacity: number;
   blacklist: string;
   keyBindings: Record<KeyBindingName, KeyBinding>;
 }
 
 export type KeyBindingName =
-  "display" | "slower" | "faster" | "rewind" | "advance" | "reset";
+  "slower" | "faster" | "rewind" | "advance" | "reset";
 
 interface KeyBinding {
   key: number;

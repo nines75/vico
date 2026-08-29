@@ -1,19 +1,46 @@
-import { browser, defineContentScript } from "#imports";
+import { createShadowRootUi, defineContentScript } from "#imports";
 import { loadSettings } from "@/utils/storage";
-import "../inject.css";
 import type { KeyBindingName, Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
-import type { PublicPath } from "wxt/browser";
-import throttle from "throttleit";
+import debounce from "debounce";
+import "./overlay.css";
 
 let settings: Settings;
 
 export default defineContentScript({
   allFrames: true,
   matches: ["http://*/*", "https://*/*", "file:///*"],
-  async main() {
+  cssInjectionMode: "ui",
+  async main(ctx) {
     // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
     settings = await loadSettings();
+
+    if (globalThis.self === window.top) {
+      const elements = document.querySelectorAll("vico-overlay");
+      for (const element of elements) {
+        element.remove();
+      }
+
+      const ui = await createShadowRootUi(ctx, {
+        name: "vico-overlay",
+        position: "inline",
+        anchor: "body",
+        onMount(container) {
+          const div = document.createElement("div");
+          div.className = "overlay";
+
+          container.append(div);
+        },
+      });
+      ui.mount();
+
+      window.addEventListener("message", (event) => {
+        const data = event.data as { type: string; message: string };
+        if (data.type === "vico-show-overlay") {
+          showOverlay(data.message);
+        }
+      });
+    }
 
     if (isBlacklisted() || !settings.enabled) return;
 
@@ -33,25 +60,6 @@ export default defineContentScript({
 // -------------------------------------------------------------------------------------------
 
 function init() {
-  assignController(...getMediaElements());
-
-  document.addEventListener(
-    "ratechange",
-    (event) => {
-      // It's possible to get a rate change on a VIDEO/AUDIO that doesn't have
-      // a video controller attached to it. If we do, ignore it.
-      const media = event.target;
-      if (!(media instanceof HTMLMediaElement) || media.vsc === undefined)
-        return;
-
-      media.vsc.root.textContent = media.playbackRate.toFixed(2);
-
-      // show the controller for 1000ms if it's hidden.
-      runAction({ action: "blink" });
-    },
-    { capture: true },
-  );
-
   document.addEventListener(
     "keydown",
     (event) => {
@@ -75,9 +83,9 @@ function init() {
         ([, keyBinding]) => keyBinding.key === event.keyCode,
       );
       if (item !== undefined) {
-        const [action, keyBinding] = item;
+        const [type, keyBinding] = item;
 
-        runAction({ action, value: keyBinding.value });
+        runAction(type, keyBinding.value);
 
         if (keyBinding.force) {
           // disable websites key bindings
@@ -88,141 +96,9 @@ function init() {
     },
     { capture: true },
   );
-
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (!(node instanceof HTMLElement)) continue;
-
-        assignController(node);
-        assignController(...getMediaElements());
-      }
-
-      for (const node of mutation.removedNodes) {
-        if (!(node instanceof HTMLElement)) continue;
-
-        unassignController(node);
-        unassignController(...getMediaElements());
-      }
-    }
-  });
-  observer.observe(document, {
-    childList: true,
-    subtree: true,
-  });
-}
-
-function assignController(...nodes: Node[]) {
-  for (const node of nodes) {
-    if (node instanceof HTMLMediaElement) {
-      node.vsc ??= new Controller(node);
-    }
-  }
-}
-
-function unassignController(...nodes: Node[]) {
-  for (const node of nodes) {
-    if (node instanceof HTMLMediaElement && !node.isConnected) {
-      node.vsc?.remove();
-    }
-  }
 }
 
 // -------------------------------------------------------------------------------------------
-
-export class Controller {
-  private media: HTMLMediaElement;
-  public host: HTMLElement;
-  public root: Element;
-  public blinkTimeOut: number | undefined;
-
-  constructor(media: HTMLMediaElement) {
-    this.media = media;
-
-    const wrapper = this.media.ownerDocument.createElement("div");
-    wrapper.classList.add("vsc-controller");
-
-    if (this.media.src === "" && this.media.currentSrc === "") {
-      wrapper.classList.add("vsc-nosource");
-    }
-
-    if (settings.startHidden) {
-      wrapper.classList.add("vsc-hidden");
-    }
-
-    const shadowRoot = wrapper.attachShadow({ mode: "open" });
-    const fragment = new DocumentFragment();
-
-    const style = document.createElement("style");
-    style.textContent = `@import "${browser.runtime.getURL("/assets/shadow.css" as PublicPath)}";`;
-
-    const div = document.createElement("div");
-    div.id = "controller";
-    div.style.top = `${Math.max(this.media.offsetTop, 0)}px`; // should set to controller can drag properly
-    div.style.left = `${Math.max(this.media.offsetLeft, 0)}px`;
-    div.style.opacity = settings.controllerOpacity.toString();
-    div.textContent = this.media.playbackRate.toFixed(2);
-
-    fragment.append(style, div);
-    shadowRoot.append(fragment);
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const root = shadowRoot.querySelector("#controller")!;
-    this.root = root;
-
-    if (root instanceof HTMLElement) {
-      root.addEventListener(
-        "mousedown",
-        (event) => {
-          runAction({ action: "drag", event });
-          event.stopPropagation();
-        },
-        { capture: true },
-      );
-    }
-
-    root.addEventListener(
-      "click",
-      (e) => {
-        e.stopPropagation();
-      },
-      { capture: false },
-    );
-    root.addEventListener(
-      "mousedown",
-      (e) => {
-        e.stopPropagation();
-      },
-      { capture: false },
-    );
-
-    this.media.parentElement?.prepend(wrapper);
-
-    this.host = wrapper;
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        const target = mutation.target;
-        if (!(target instanceof HTMLMediaElement)) continue;
-
-        this.host.classList.toggle(
-          "vsc-nosource",
-          target.src === "" && target.currentSrc === "",
-        );
-      }
-    });
-    observer.observe(media, {
-      attributes: true,
-      attributeFilter: ["src", "currentSrc"],
-    });
-  }
-
-  remove() {
-    this.host.remove();
-
-    delete this.media.vsc;
-  }
-}
 
 function isBlacklisted() {
   for (const line of settings.blacklist.split("\n")) {
@@ -254,88 +130,63 @@ function isBlacklisted() {
   return false;
 }
 
-const hideController = throttle((host: HTMLElement) => {
-  host.classList.remove("vcs-show");
+const showOverlay = (message: string) => {
+  const host = document.querySelector("vico-overlay");
+  const overlay = host?.shadowRoot?.querySelector(".overlay");
+
+  if (overlay instanceof HTMLElement) {
+    overlay.textContent = message;
+    overlay.classList.add("visible");
+
+    hideOverlay(overlay);
+  }
+};
+
+const hideOverlay = debounce((host: HTMLElement) => {
+  host.classList.remove("visible");
 }, 2000);
 
-function runAction(
-  params:
-    | { action: KeyBindingName; value: number }
-    | { action: "blink" }
-    | { action: "drag"; event: MouseEvent },
-) {
+function postMessage(message: string) {
+  globalThis.top?.postMessage({ type: "vico-show-overlay", message }, "*");
+}
+
+function runAction(type: KeyBindingName, value: number) {
   const mediaElements = getMediaElements();
 
   for (const media of mediaElements) {
-    const host = media.vsc?.host;
-    if (host === undefined) continue;
-
-    host.classList.add("vcs-show");
-    hideController(host);
-
-    if (media.classList.contains("vsc-cancelled")) continue;
-
-    switch (params.action) {
+    switch (type) {
       case "rewind": {
-        media.currentTime -= params.value;
+        media.currentTime -= value;
+        postMessage(`-${value}`);
 
         break;
       }
       case "advance": {
-        media.currentTime += params.value;
+        media.currentTime += value;
+        postMessage(`+${value}`);
 
         break;
       }
       case "faster": {
-        // min rate is 16
-        const speed = Math.min(
-          (media.playbackRate < 0.1 ? 0 : media.playbackRate) + params.value,
-          16,
-        );
+        const baseSpeed = media.playbackRate < 0.1 ? 0 : media.playbackRate;
+        const speed = Math.min(baseSpeed + value, 16); // max rate is 16
         media.playbackRate = speed;
+
+        postMessage(`${speed.toFixed(2)}x`);
 
         break;
       }
       case "slower": {
-        // min rate is 0.0625
-        const speed = Math.max(media.playbackRate - params.value, 0.07);
+        const speed = Math.max(media.playbackRate - value, 0.07); // min rate is 0.0625
         media.playbackRate = speed;
+
+        postMessage(`${speed.toFixed(2)}x`);
 
         break;
       }
       case "reset": {
         media.playbackRate = 1;
-
-        break;
-      }
-      case "display": {
-        host.classList.add("vsc-manual");
-        host.classList.toggle("vsc-hidden");
-
-        break;
-      }
-      case "blink": {
-        if (media.vsc === undefined) break;
-
-        // if vsc is hidden, show it briefly to give the use visual feedback that the action is excuted.
-        if (
-          host.classList.contains("vsc-hidden") ||
-          media.vsc.blinkTimeOut !== undefined
-        ) {
-          clearTimeout(media.vsc.blinkTimeOut);
-          host.classList.remove("vsc-hidden");
-
-          media.vsc.blinkTimeOut = setTimeout(() => {
-            host.classList.add("vsc-hidden");
-
-            if (media.vsc !== undefined) media.vsc.blinkTimeOut = undefined;
-          }, 1000);
-        }
-
-        break;
-      }
-      case "drag": {
-        handleDrag(media, params.event);
+        postMessage("1.00x");
 
         break;
       }
@@ -353,51 +204,4 @@ function getMediaElements(): HTMLMediaElement[] {
   }
 
   return elements;
-}
-
-function handleDrag(media: HTMLMediaElement, event: MouseEvent) {
-  const host = media.vsc?.host;
-  if (host === undefined) return;
-
-  const root = media.vsc?.root;
-  if (!(root instanceof HTMLElement)) return;
-
-  const directParent = host.parentElement;
-  if (directParent === null) return;
-
-  // Find nearest parent of same size as video parent.
-  let parent = directParent;
-  while (
-    parent.parentElement !== null &&
-    parent.parentElement.offsetHeight === parent.offsetHeight &&
-    parent.parentElement.offsetWidth === parent.offsetWidth
-  ) {
-    parent = parent.parentElement;
-  }
-
-  media.classList.add("vcs-dragging");
-  root.classList.add("dragging");
-
-  const [left, top] = [parseInt(root.style.left), parseInt(root.style.top)];
-
-  const startDragging = (target: MouseEvent) => {
-    const dx = target.clientX - event.clientX;
-    const dy = target.clientY - event.clientY;
-
-    root.style.left = `${left + dx}px`;
-    root.style.top = `${top + dy}px`;
-  };
-
-  const stopDragging = () => {
-    parent.removeEventListener("mousemove", startDragging);
-    parent.removeEventListener("mouseup", stopDragging);
-    parent.removeEventListener("mouseleave", stopDragging);
-
-    media.classList.remove("vcs-dragging");
-    root.classList.remove("dragging");
-  };
-
-  parent.addEventListener("mousemove", startDragging);
-  parent.addEventListener("mouseup", stopDragging);
-  parent.addEventListener("mouseleave", stopDragging);
 }

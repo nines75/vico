@@ -1,0 +1,16 @@
+.overlay {
+  display: none;
+  font-size: 25px;
+  top: 20px;
+  left: 20px;
+  position: fixed;
+  color: white;
+  background: black;
+  border-radius: 5px;
+  border: 2px solid white;
+  padding: 8px 5px;
+  z-index: calc(infinity);
+}
+.visible {
+  display: block;
+}
