@@ -4,9 +4,9 @@ import "../inject.css";
 import type { KeyBindingName, Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
 import type { PublicPath } from "wxt/browser";
+import throttle from "throttleit";
 
 let settings: Settings;
-let timerId = 0;
 
 export default defineContentScript({
   allFrames: true,
@@ -254,6 +254,10 @@ function isBlacklisted() {
   return false;
 }
 
+const hideController = throttle((host: HTMLElement) => {
+  host.classList.remove("vcs-show");
+}, 2000);
+
 function runAction(
   params:
     | { action: KeyBindingName; value: number }
@@ -267,13 +271,7 @@ function runAction(
     if (host === undefined) continue;
 
     host.classList.add("vcs-show");
-
-    if (timerId > 0) clearTimeout(timerId);
-
-    timerId = setTimeout(() => {
-      host.classList.remove("vcs-show");
-      timerId = 0;
-    }, 2000);
+    hideController(host);
 
     if (media.classList.contains("vsc-cancelled")) continue;
 
