@@ -10,7 +10,7 @@ import { withVueTs, vueTsConfigs } from "@vue/eslint-config-typescript";
 const isCi = process.env.CI === "true";
 
 export default withVueTs(
-  globalIgnores([".output/", ".wxt/", "eslint.config.js"]),
+  globalIgnores([".output/", ".wxt/"]),
 
   js.configs.recommended,
 
@@ -25,8 +25,8 @@ export default withVueTs(
 
   // https://github.com/vuejs/eslint-config-typescript
   ...vue.configs["flat/recommended"],
-  vueTsConfigs["strictTypeChecked"],
-  vueTsConfigs["stylisticTypeChecked"],
+  vueTsConfigs.strictTypeChecked,
+  vueTsConfigs.stylisticTypeChecked,
 
   {
     files: ["**/*.{ts,vue}"],
