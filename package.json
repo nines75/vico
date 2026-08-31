@@ -20,7 +20,9 @@
   },
   "scripts": {
     "dev": "wxt --browser firefox --mv2",
+    "dev:chrome": "wxt",
     "build": "wxt build --browser firefox --mv2",
+    "build:chrome": "wxt build",
     "zip": "wxt zip --browser firefox --mv2",
     "postinstall": "wxt prepare",
     "preversion": "pnpm check",

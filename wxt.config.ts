@@ -6,20 +6,27 @@ export default defineConfig({
   zip: {
     artifactTemplate: "firefox.xpi",
   },
-  manifest: ({ mode }) => {
+  manifest: ({ mode, manifestVersion }) => {
     const isDevelopment = mode === "development";
+    const isMv2 = manifestVersion === 2;
+    const default_title = "open vico settings";
 
     return {
       permissions: ["storage"],
       commands: {
-        _execute_browser_action: {
-          description: "open settings",
-          suggested_key: isDevelopment ? { default: "Alt+O" } : {},
-        },
+        ...(isDevelopment &&
+          isMv2 && {
+            _execute_browser_action: {
+              description: "open settings",
+              suggested_key: {
+                default: "Alt+O",
+              },
+            },
+          }),
       },
-      browser_action: {
-        default_title: "open vico settings",
-      },
+      ...(isMv2
+        ? { browser_action: { default_title } }
+        : { action: { default_title } }),
       browser_specific_settings: {
         gecko: {
           id: "{ac7945b9-252e-43ae-b047-23d50acf61ab}",
