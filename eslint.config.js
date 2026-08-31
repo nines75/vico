@@ -1,20 +1,18 @@
 import js from "@eslint/js";
-import ts from "typescript-eslint";
-import { defineConfig, globalIgnores } from "eslint/config";
+import { globalIgnores } from "eslint/config";
 import prettier from "eslint-config-prettier/flat";
 import { importX } from "eslint-plugin-import-x";
 import unicorn from "eslint-plugin-unicorn";
 import regex from "eslint-plugin-regexp";
+import vue from "eslint-plugin-vue";
+import { withVueTs, vueTsConfigs } from "@vue/eslint-config-typescript";
 
 const isCi = process.env.CI === "true";
 
-export default defineConfig(
+export default withVueTs(
   globalIgnores([".output/", ".wxt/", "eslint.config.js"]),
 
-  // https://typescript-eslint.io/getting-started
   js.configs.recommended,
-  ts.configs.strictTypeChecked,
-  ts.configs.stylisticTypeChecked,
 
   // https://github.com/un-ts/eslint-plugin-import-x
   importX.flatConfigs.typescript,
@@ -25,8 +23,13 @@ export default defineConfig(
   // https://github.com/ota-meshi/eslint-plugin-regexp
   regex.configs.recommended,
 
+  // https://github.com/vuejs/eslint-config-typescript
+  ...vue.configs["flat/recommended"],
+  vueTsConfigs["strictTypeChecked"],
+  vueTsConfigs["stylisticTypeChecked"],
+
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ["**/*.{ts,vue}"],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -78,6 +81,7 @@ export default defineConfig(
       // disable
       // -------------------------------------------------------------------------------------------
 
+      "vue/multi-word-component-names": "off",
       "unicorn/name-replacements": "off",
       "unicorn/no-null": "off",
       "unicorn/no-break-in-nested-loop": "off",
@@ -103,6 +107,17 @@ export default defineConfig(
           allowString: false,
           allowNumber: false,
           allowNullableObject: false,
+        },
+      ],
+      "import-x/no-restricted-paths": [
+        "error",
+        {
+          zones: [
+            {
+              target: ["./entrypoints/content/**/*"],
+              from: "./utils/storage-write.ts",
+            },
+          ],
         },
       ],
       "import-x/no-cycle": ["error", { maxDepth: isCi ? Infinity : 1 }],

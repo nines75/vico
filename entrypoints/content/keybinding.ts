@@ -15,7 +15,8 @@ export function setupKeybindings(settings: Settings) {
       return;
 
     const item = objectEntries(settings.keybindings).find(
-      ([, keybinding]) => keybinding.key === event.key.toLowerCase(),
+      ([, keybinding]) =>
+        keybinding.key.toLowerCase() === event.key.toLowerCase(),
     );
     if (item === undefined) return;
 

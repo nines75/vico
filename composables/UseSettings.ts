@@ -1,0 +1,30 @@
+import { ref } from "#imports";
+import type { Settings } from "@/types/settings.types";
+import { loadSettings } from "@/utils/storage";
+import { setSettings } from "@/utils/storage-write";
+import { merge } from "@/utils/util";
+import type { PartialDeep } from "type-fest";
+
+const settings = ref(await loadSettings());
+
+const saveSettings = async (newSettings: PartialDeep<Settings>) => {
+  const currentSettings = settings.value;
+  settings.value = merge(currentSettings, newSettings);
+
+  try {
+    await setSettings(newSettings);
+  } catch {
+    settings.value = currentSettings;
+
+    return false; // failed
+  }
+
+  return true; // success
+};
+
+export function useSettings() {
+  return {
+    settings,
+    saveSettings,
+  };
+}

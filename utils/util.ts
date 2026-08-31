@@ -1,3 +1,6 @@
+import type { DeepMergeLeafURI } from "deepmerge-ts";
+import { deepmergeCustom, type DeepMergeNoFilteringURI } from "deepmerge-ts";
+
 export function catchAsync<T extends unknown[]>(
   fn: (...args: T) => Promise<void>,
 ) {
@@ -6,3 +9,19 @@ export function catchAsync<T extends unknown[]>(
     fn(...args).catch(console.error);
   };
 }
+
+export const merge = deepmergeCustom<
+  unknown,
+  {
+    DeepMergeArraysURI: DeepMergeLeafURI;
+    DeepMergeMapsURI: DeepMergeLeafURI;
+    DeepMergeSetsURI: DeepMergeLeafURI;
+    DeepMergeFilterValuesURI: DeepMergeNoFilteringURI;
+  }
+>({
+  mergeArrays: false,
+  mergeMaps: false,
+  mergeSets: false,
+
+  filterValues: false,
+});

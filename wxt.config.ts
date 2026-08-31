@@ -1,7 +1,7 @@
 import { defineConfig } from "wxt";
 
 export default defineConfig({
-  modules: ["@wxt-dev/auto-icons"],
+  modules: ["@wxt-dev/auto-icons", "@wxt-dev/module-vue"],
   imports: false,
   zip: {
     artifactTemplate: "firefox.xpi",

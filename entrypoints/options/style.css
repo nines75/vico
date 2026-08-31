@@ -1,0 +1,32 @@
+@import "modern-normalize/modern-normalize.css";
+
+:root {
+  --background: #292a2d;
+  --dim-white: #e8eaed;
+  --font: Consolas, monospace;
+}
+input,
+button,
+select {
+  color: inherit;
+}
+body {
+  background: var(--background);
+  color: var(--dim-white);
+  padding-inline: 50px;
+}
+h2 {
+  border-bottom: 2px solid gray;
+  font-size: 18px;
+  width: fit-content;
+  margin-block: 20px;
+}
+.settings-container {
+  margin-left: 20px;
+}
+.setting {
+  margin: 12px;
+}
+.setting-label {
+  font-weight: bold;
+}
