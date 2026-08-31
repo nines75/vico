@@ -7,7 +7,7 @@ import { isBlacklisted } from "./blacklist";
 
 export default defineContentScript({
   allFrames: true,
-  matches: ["http://*/*", "https://*/*", "file:///*"],
+  matches: ["http://*/*", "https://*/*"],
   cssInjectionMode: "ui",
   async main(ctx) {
     const settings = await loadSettings();
