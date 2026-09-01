@@ -19,11 +19,11 @@
     }
   },
   "scripts": {
-    "dev": "wxt --browser firefox --mv2",
+    "dev": "wxt --browser firefox",
     "dev:chrome": "wxt",
-    "build": "wxt build --browser firefox --mv2",
+    "build": "wxt build --browser firefox",
     "build:chrome": "wxt build",
-    "zip": "wxt zip --browser firefox --mv2",
+    "zip": "wxt zip --browser firefox",
     "postinstall": "wxt prepare",
     "preversion": "pnpm check",
     "compile": "vue-tsc --noEmit",
