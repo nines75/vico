@@ -24,7 +24,7 @@ export function setupKeybindings(settings: Settings) {
     const mediaElements: HTMLMediaElement[] = [];
 
     for (const element of document.querySelectorAll("video,audio")) {
-      if (element instanceof HTMLMediaElement) {
+      if (element instanceof HTMLMediaElement && element.checkVisibility()) {
         mediaElements.push(element);
       }
     }
