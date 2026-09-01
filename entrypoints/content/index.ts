@@ -3,7 +3,7 @@ import { loadSettings } from "@/utils/storage";
 import "./overlay.css";
 import { setupOverlay } from "./overlay";
 import { setupKeybindings } from "./keybinding";
-import { isBlacklisted } from "./blacklist";
+import { shouldEnable } from "./filter";
 
 export default defineContentScript({
   allFrames: true,
@@ -11,12 +11,13 @@ export default defineContentScript({
   cssInjectionMode: "ui",
   async main(ctx) {
     const settings = await loadSettings();
+    if (!settings.enabled) return;
 
     if (globalThis.self === window.top) {
       await setupOverlay(ctx);
     }
 
-    if (isBlacklisted(settings) || !settings.enabled) return;
+    if (!shouldEnable(settings)) return;
 
     if (document.readyState === "complete") {
       setupKeybindings(settings);

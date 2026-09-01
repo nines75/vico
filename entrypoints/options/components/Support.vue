@@ -36,12 +36,6 @@ const config = {
 
 <style scoped>
 .button {
-  font-weight: bold;
-  padding: 10px 20px;
-  margin: 10px;
-  border: gray 3px solid;
-  border-radius: 10px;
-  display: inline-flex;
   text-decoration: none;
   color: inherit;
 }

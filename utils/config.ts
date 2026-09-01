@@ -2,7 +2,10 @@ import type { Settings } from "@/types/settings.types";
 
 export const defaultSettings: Settings = {
   enabled: true,
-  blacklist: "",
+  filter: {
+    mode: "blacklist",
+    rules: [],
+  },
   keybindings: {
     slower: {
       key: "s",

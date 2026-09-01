@@ -25,3 +25,7 @@ export const merge = deepmergeCustom<
 
   filterValues: false,
 });
+
+export function isString(value: unknown) {
+  return typeof value === "string";
+}

@@ -1,12 +1,14 @@
 <script lang="ts" setup>
 import { ref } from "#imports";
+import Filter from "./components/Filter.vue";
 import General from "./components/General.vue";
 import Support from "./components/Support.vue";
 
-const tab = ref<"General" | "Support">("General");
+const tab = ref<"General" | "Filter" | "Support">("General");
 
 const tabMap = {
   General,
+  Filter,
   Support,
 };
 </script>
@@ -15,7 +17,7 @@ const tabMap = {
   <div class="tab-container">
     <div class="tab">
       <button
-        v-for="item in ['General', 'Support']"
+        v-for="item in ['General', 'Filter', 'Support']"
         :key="item"
         class="tab-button"
         :class="{ selected: item === tab }"

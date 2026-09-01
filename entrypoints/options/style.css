@@ -21,6 +21,14 @@ h2 {
   width: fit-content;
   margin-block: 20px;
 }
+.button {
+  font-weight: bold;
+  padding: 10px 20px;
+  margin: 10px;
+  border: gray 3px solid;
+  border-radius: 10px;
+  display: inline-flex;
+}
 .settings-container {
   margin-left: 20px;
 }
@@ -28,5 +36,11 @@ h2 {
   margin: 12px;
 }
 .setting-label {
+  font-weight: bold;
+}
+.info {
+  color: silver;
+}
+.info-value {
   font-weight: bold;
 }

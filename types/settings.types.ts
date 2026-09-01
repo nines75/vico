@@ -1,6 +1,9 @@
 export interface Settings {
   enabled: boolean;
-  blacklist: string;
+  filter: {
+    mode: "blacklist" | "whitelist";
+    rules: { id: string; pattern: string }[];
+  };
   keybindings: Record<KeybindingName, Keybinding>;
 }
 
