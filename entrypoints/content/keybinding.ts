@@ -20,7 +20,7 @@ export function setupKeybindings(settings: Settings) {
     );
     if (item === undefined) return;
 
-    const [type, keybinding] = item;
+    const [keybindingName, keybinding] = item;
     const mediaElements: HTMLMediaElement[] = [];
 
     for (const element of document.querySelectorAll("video,audio")) {
@@ -30,7 +30,7 @@ export function setupKeybindings(settings: Settings) {
     }
 
     for (const media of mediaElements) {
-      switch (type) {
+      switch (keybindingName) {
         case "faster": {
           const baseSpeed = media.playbackRate < 0.1 ? 0 : media.playbackRate;
           const speed = Math.min(baseSpeed + keybinding.value, 16); // max rate is 16
