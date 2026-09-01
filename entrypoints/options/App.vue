@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { ref } from "#imports";
 import Filter from "./components/Filter.vue";
 import General from "./components/General.vue";
 import Support from "./components/Support.vue";
+import { useSettings } from "@/composables/UseSettings.ts";
 
-const tab = ref<"General" | "Filter" | "Support">("General");
+const { settings, saveSettings } = useSettings();
 
 const tabMap = {
   General,
@@ -20,14 +20,14 @@ const tabMap = {
         v-for="item in ['General', 'Filter', 'Support']"
         :key="item"
         class="tab-button"
-        :class="{ selected: item === tab }"
-        @click="tab = item"
+        :class="{ selected: item === settings.selectedSettingsTab }"
+        @click="saveSettings({ selectedSettingsTab: item })"
       >
         {{ item }}
       </button>
     </div>
   </div>
-  <component :is="tabMap[tab]"></component>
+  <component :is="tabMap[settings.selectedSettingsTab]"></component>
 </template>
 
 <style scoped>

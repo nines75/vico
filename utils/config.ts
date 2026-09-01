@@ -2,6 +2,7 @@ import type { Settings } from "@/types/settings.types";
 
 export const defaultSettings: Settings = {
   enabled: true,
+  selectedSettingsTab: "General",
   filter: {
     mode: "blacklist",
     rules: [],
