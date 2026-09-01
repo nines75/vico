@@ -86,7 +86,6 @@ export default withVueTs(
       "unicorn/no-null": "off",
       "unicorn/no-break-in-nested-loop": "off",
       "unicorn/require-array-sort-compare": "off",
-      "unicorn/max-nested-calls": "off",
       "unicorn/prefer-else-if": "off",
       "unicorn/isolated-functions": "off",
       "unicorn/consistent-boolean-name": "off",
