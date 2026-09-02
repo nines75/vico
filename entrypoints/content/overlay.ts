@@ -1,11 +1,31 @@
 import { createShadowRootUi, type ContentScriptContext } from "#imports";
+import { catchAsync } from "@/utils/util";
 import debounce from "debounce";
 
-export async function setupOverlay(ctx: ContentScriptContext) {
-  const elements = document.querySelectorAll("vico-overlay");
-  for (const element of elements) {
-    element.remove();
-  }
+export function setupOverlay(ctx: ContentScriptContext) {
+  globalThis.addEventListener(
+    "message",
+    catchAsync(async (event) => {
+      const data = event.data as { type: string; message: string };
+
+      if (data.type === "vico-show-overlay") {
+        const host = await mountOverlay(ctx);
+        const overlay = host.shadowRoot?.querySelector(".overlay");
+
+        if (overlay instanceof HTMLElement) {
+          overlay.textContent = data.message;
+          overlay.classList.add("visible");
+
+          hideOverlay(overlay);
+        }
+      }
+    }),
+  );
+}
+
+async function mountOverlay(ctx: ContentScriptContext) {
+  const host = document.querySelector("vico-overlay");
+  if (host !== null) return host;
 
   const ui = await createShadowRootUi(ctx, {
     name: "vico-overlay",
@@ -20,21 +40,7 @@ export async function setupOverlay(ctx: ContentScriptContext) {
   });
   ui.mount();
 
-  globalThis.addEventListener("message", (event) => {
-    const data = event.data as { type: string; message: string };
-
-    if (data.type === "vico-show-overlay") {
-      const host = document.querySelector("vico-overlay");
-      const overlay = host?.shadowRoot?.querySelector(".overlay");
-
-      if (overlay instanceof HTMLElement) {
-        overlay.textContent = data.message;
-        overlay.classList.add("visible");
-
-        hideOverlay(overlay);
-      }
-    }
-  });
+  return ui.shadowHost;
 }
 
 const hideOverlay = debounce((overlay: HTMLElement) => {

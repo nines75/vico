@@ -14,7 +14,7 @@ export default defineContentScript({
     if (!settings.enabled) return;
 
     if (globalThis.self === globalThis.top) {
-      await setupOverlay(ctx);
+      setupOverlay(ctx);
     }
 
     if (!shouldEnable(settings)) return;
