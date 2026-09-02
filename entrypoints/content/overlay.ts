@@ -6,9 +6,9 @@ export function setupOverlay(ctx: ContentScriptContext) {
   globalThis.addEventListener(
     "message",
     catchAsync(async (event) => {
-      const data = event.data as { type: string; message: string };
+      const data = event.data as { type?: string; message?: string };
 
-      if (data.type === "vico-show-overlay") {
+      if (data.type === "vico-show-overlay" && data.message !== undefined) {
         const host = await mountOverlay(ctx);
         const overlay = host.shadowRoot?.querySelector(".overlay");
 

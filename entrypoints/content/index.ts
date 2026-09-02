@@ -21,6 +21,7 @@ export default defineContentScript({
 
     if (document.readyState === "complete") {
       setupKeybindings(settings);
+
       return;
     }
 
