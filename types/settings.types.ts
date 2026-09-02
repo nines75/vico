@@ -3,7 +3,7 @@ export interface Settings {
   selectedSettingsTab: settingsTab;
   filter: {
     mode: "blacklist" | "whitelist";
-    rules: { id: string; pattern: string }[];
+    rules: { id: string; pattern: string; enabled: boolean }[];
   };
   keybindings: Record<KeybindingName, Keybinding>;
 }

@@ -25,7 +25,7 @@ const onSubmit = async () => {
   await saveSettings({
     filter: {
       rules: [
-        { id: crypto.randomUUID(), pattern: input.value },
+        { id: crypto.randomUUID(), pattern: input.value, enabled: true },
         ...toRaw(settings.value.filter.rules),
       ],
     },
@@ -68,7 +68,24 @@ const onSubmit = async () => {
     </span>
   </div>
   <div class="rule-container">
-    <div v-for="{ id, pattern, result } in parsedRules" :key="id" class="rule">
+    <div
+      v-for="{ id, pattern, enabled, result } in parsedRules"
+      :key="id"
+      class="rule"
+      :class="{ disabled: !enabled }"
+      title="Click to toggle"
+      @click="
+        saveSettings({
+          filter: {
+            rules: settings.filter.rules.map((rule) => {
+              if (rule.id !== id) return toRaw(rule);
+
+              return { ...rule, enabled: !rule.enabled };
+            }),
+          },
+        })
+      "
+    >
       <button
         class="rule-delete-button"
         @click="
@@ -132,6 +149,9 @@ const onSubmit = async () => {
   text-wrap-mode: nowrap;
   display: flex;
   gap: 10px;
+  &.disabled {
+    opacity: 0.5;
+  }
 }
 .rule-delete-button {
   border: none;

@@ -9,7 +9,7 @@ export function shouldEnable(settings: Settings) {
 
 function isMatch(settings: Settings) {
   for (const rule of settings.filter.rules) {
-    if (rule.pattern === "") continue;
+    if (!rule.enabled || rule.pattern === "") continue;
 
     const result = parsePattern(rule.pattern);
     if (result.type === "invalid") continue;
