@@ -101,7 +101,7 @@ const onSubmit = async () => {
         ✕
       </button>
       <template v-if="result.type === 'invalid'">
-        <span class="rule-invalid">{{ pattern }}</span>
+        <span class="pattern-invalid">{{ pattern }}</span>
         <span class="info">(invalid)</span>
       </template>
       <template v-else>
@@ -109,7 +109,7 @@ const onSubmit = async () => {
           {{ pattern }}
         </template>
         <template v-else>
-          <span class="rule-regex">{{ pattern }}</span>
+          <span class="pattern-regex">{{ pattern }}</span>
           <span class="info">(regex)</span>
         </template>
       </template>
@@ -157,10 +157,10 @@ const onSubmit = async () => {
   border: none;
   color: gray;
 }
-.rule-invalid {
+.pattern-invalid {
   color: red;
 }
-.rule-regex {
+.pattern-regex {
   color: orange;
 }
 </style>
