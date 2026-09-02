@@ -13,7 +13,7 @@ const parsedRules = computed(() =>
   }),
 );
 
-const onSubmit = async () => {
+async function onSubmit() {
   if (input.value === "") return;
 
   if (parsePattern(input.value).type === "invalid") {
@@ -32,7 +32,7 @@ const onSubmit = async () => {
   });
 
   input.value = "";
-};
+}
 </script>
 
 <template>

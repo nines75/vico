@@ -10,10 +10,7 @@ import { browser, useTemplateRef } from "#imports";
 const { settings, saveSettings } = useSettings();
 const inputRef = useTemplateRef("inputRef");
 
-const onClickKeybindingButton = async (
-  pointerEvent: PointerEvent,
-  type: KeybindingName,
-) => {
+async function recordKey(pointerEvent: PointerEvent, type: KeybindingName) {
   const isSaved = await saveSettings({ keybindings: { [type]: { key: "" } } });
   if (!isSaved) return;
 
@@ -29,7 +26,7 @@ const onClickKeybindingButton = async (
     }),
     { once: true },
   );
-};
+}
 
 async function importBackup(event: Event) {
   const text = await (event.target as HTMLInputElement).files?.[0]?.text();
@@ -77,10 +74,7 @@ async function exportBackup() {
     >
       <label class="setting-label">
         <span class="keybinding-name">{{ type }}:</span>
-        <button
-          class="keybinding-button"
-          @click="onClickKeybindingButton($event, type)"
-        >
+        <button class="keybinding-button" @click="recordKey($event, type)">
           <template v-if="settings.keybindings[type].key === ''">
             press a key
           </template>
