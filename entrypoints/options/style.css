@@ -21,6 +21,15 @@ h2 {
   width: fit-content;
   margin-block: 20px;
 }
+/* Make the display consistent in Chrome and Firefox. */
+button {
+  border: 1px solid gray;
+  border-radius: 4px;
+  background-color: var(--background);
+  &:hover {
+    background-color: #54525d;
+  }
+}
 .button {
   font-weight: bold;
   padding: 10px 20px;

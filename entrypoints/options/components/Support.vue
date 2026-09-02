@@ -38,5 +38,8 @@ const config = {
 .button {
   text-decoration: none;
   color: inherit;
+  &:hover {
+    background-color: #54525d;
+  }
 }
 </style>
