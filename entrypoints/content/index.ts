@@ -13,7 +13,7 @@ export default defineContentScript({
     const settings = await loadSettings();
     if (!settings.enabled) return;
 
-    if (globalThis.self === window.top) {
+    if (globalThis.self === globalThis.top) {
       await setupOverlay(ctx);
     }
 

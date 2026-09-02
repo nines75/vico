@@ -20,7 +20,7 @@ export async function setupOverlay(ctx: ContentScriptContext) {
   });
   ui.mount();
 
-  window.addEventListener("message", (event) => {
+  globalThis.addEventListener("message", (event) => {
     const data = event.data as { type: string; message: string };
 
     if (data.type === "vico-show-overlay") {
