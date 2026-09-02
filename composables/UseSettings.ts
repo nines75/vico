@@ -13,8 +13,9 @@ const saveSettings = async (newSettings: PartialDeep<Settings>) => {
 
   try {
     await setSettings(newSettings);
-  } catch {
+  } catch (error) {
     settings.value = currentSettings;
+    console.error(error);
 
     return false; // failure
   }
