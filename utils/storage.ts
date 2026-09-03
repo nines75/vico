@@ -5,7 +5,7 @@ import type { PartialDeep } from "type-fest";
 import { merge } from "./util";
 
 export const settingsStorage = storage.defineItem<PartialDeep<Settings>>(
-  `local:settings`,
+  "local:settings",
   {
     init: () => {
       return {};
