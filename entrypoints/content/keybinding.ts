@@ -37,7 +37,7 @@ export function setupKeybindings(settings: Settings) {
           const speed = Math.min(baseSpeed + keybinding.value, 16); // max rate is 16
           media.playbackRate = speed;
 
-          postMessage(`${speed.toFixed(2)}x`);
+          showOverlay(`${speed.toFixed(2)}x`);
 
           break;
         }
@@ -45,13 +45,13 @@ export function setupKeybindings(settings: Settings) {
           const speed = Math.max(media.playbackRate - keybinding.value, 0.07); // min rate is 0.0625
           media.playbackRate = speed;
 
-          postMessage(`${speed.toFixed(2)}x`);
+          showOverlay(`${speed.toFixed(2)}x`);
 
           break;
         }
         case "reset": {
           media.playbackRate = 1;
-          postMessage("1.00x");
+          showOverlay("1.00x");
 
           break;
         }
@@ -62,7 +62,7 @@ export function setupKeybindings(settings: Settings) {
   document.addEventListener("keydown", onKeyDown, { capture: true });
 }
 
-function postMessage(message: string) {
+function showOverlay(message: string) {
   // Send the message to the top-level window
   globalThis.top?.postMessage({ type: "vico-show-overlay", message }, "*");
 }
