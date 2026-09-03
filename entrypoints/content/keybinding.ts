@@ -24,6 +24,7 @@ export function setupKeybindings(settings: Settings) {
     const mediaElements: HTMLMediaElement[] = [];
 
     for (const element of document.querySelectorAll("video,audio")) {
+      // 要素が表示されていない場合は操作の対象にしない
       if (element instanceof HTMLMediaElement && element.checkVisibility()) {
         mediaElements.push(element);
       }
@@ -62,5 +63,6 @@ export function setupKeybindings(settings: Settings) {
 }
 
 function postMessage(message: string) {
+  // 最上位ウインドウにメッセージを送信
   globalThis.top?.postMessage({ type: "vico-show-overlay", message }, "*");
 }

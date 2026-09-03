@@ -9,6 +9,8 @@ export function setupOverlay(ctx: ContentScriptContext) {
       const data = event.data as { type?: string; message?: string };
 
       if (data.type === "vico-show-overlay" && data.message !== undefined) {
+        // この拡張を使用しないページに余分な要素をマウントしないために、
+        // ページロード時にはマウントせずにオーバーレイが最初に表示されるまで遅延させる
         const host = await mountOverlay(ctx);
         const overlay = host.shadowRoot?.querySelector(".overlay");
 
@@ -43,6 +45,10 @@ async function mountOverlay(ctx: ContentScriptContext) {
   return ui.shadowHost;
 }
 
+// 以前に表示したオーバーレイが消える前に再表示した場合に、
+// 消えるまでの待ち時間をリセットさせるためにdebounceを使う。
+// このとき呼び出しごとにdebounce()で関数を生成すると参照が異なり正しく動作しないため、
+// コールバック関数内で直接呼び出すのではなく予めグローバルで宣言したものを呼び出す。
 const hideOverlay = debounce((overlay: HTMLElement) => {
   overlay.classList.remove("visible");
 }, 2000);
