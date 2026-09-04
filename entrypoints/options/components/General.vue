@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { useSettings } from "@/composables/UseSettings";
 import type { KeybindingName } from "@/types/settings.types";
 import { catchAsync } from "@/utils/util";
 import H2 from "./H2.vue";
 import { getSettings } from "@/utils/storage.ts";
 import type { Backup } from "@/types/backup.types.ts";
 import { browser, useTemplateRef } from "#imports";
+import { useSettings } from "../composables/UseSettings.ts";
 
 const { settings, saveSettings } = useSettings();
 const inputRef = useTemplateRef("inputRef");

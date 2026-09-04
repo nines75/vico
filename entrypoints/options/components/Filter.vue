@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { computed, ref, toRaw } from "#imports";
-import { useSettings } from "@/composables/UseSettings";
 import { parsePattern } from "@/entrypoints/content/filter";
 import { isString } from "@/utils/util";
+import { useSettings } from "../composables/UseSettings";
 
 const { settings, saveSettings } = useSettings();
 const input = ref("");

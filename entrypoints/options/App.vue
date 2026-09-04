@@ -2,7 +2,7 @@
 import Filter from "./components/Filter.vue";
 import General from "./components/General.vue";
 import Support from "./components/Support.vue";
-import { useSettings } from "@/composables/UseSettings.ts";
+import { useSettings } from "./composables/UseSettings.ts";
 
 const { settings, saveSettings } = useSettings();
 
