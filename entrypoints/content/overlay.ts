@@ -16,7 +16,7 @@ export function setupOverlay(ctx: ContentScriptContext) {
 
         if (overlay instanceof HTMLElement) {
           overlay.textContent = data.message;
-          overlay.classList.add("visible");
+          overlay.showPopover();
 
           hideOverlay(overlay);
         }
@@ -37,6 +37,10 @@ async function mountOverlay(ctx: ContentScriptContext) {
       const div = document.createElement("div");
       div.className = "overlay";
 
+      // Raising z-index alone may fail to display the overlay (e.g. Apple TV),
+      // so use the Popover API to guarantee top-layer rendering.
+      div.setAttribute("popover", "manual");
+
       container.append(div);
     },
   });
@@ -51,5 +55,5 @@ async function mountOverlay(ctx: ContentScriptContext) {
 // different reference and prevent it from working correctly, so call the
 // globally declared function instead.
 const hideOverlay = debounce((overlay: HTMLElement) => {
-  overlay.classList.remove("visible");
+  overlay.hidePopover();
 }, 2000);
