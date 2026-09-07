@@ -58,6 +58,10 @@ export function setupKeybindings(settings: Settings) {
       { type: "vico-show-overlay", message } satisfies Message,
       "*",
     );
+
+    // Disable the website's default keybinding
+    event.preventDefault();
+    event.stopImmediatePropagation();
   };
 
   document.addEventListener("keydown", onKeyDown, { capture: true });
