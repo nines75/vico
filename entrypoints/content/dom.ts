@@ -2,8 +2,8 @@ export function getMediaElements(): HTMLMediaElement[] {
   const mediaElements: HTMLMediaElement[] = [];
 
   for (const element of document.querySelectorAll("video,audio")) {
-    // Ignore elements that are not visible
-    if (element instanceof HTMLMediaElement && element.checkVisibility()) {
+    // Return elements regardless of visibility, as even hidden ones may be used (e.g. Apple Podcasts).
+    if (element instanceof HTMLMediaElement) {
       mediaElements.push(element);
     }
   }
