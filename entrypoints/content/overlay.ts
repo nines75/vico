@@ -2,14 +2,16 @@ import { createShadowRootUi, type ContentScriptContext } from "#imports";
 import { catchAsync } from "@/utils/util";
 import debounce from "debounce";
 
+export interface Message {
+  type?: string;
+  message?: string | undefined;
+}
+
 export function setupOverlay(ctx: ContentScriptContext) {
   globalThis.addEventListener(
     "message",
     catchAsync(async (event) => {
-      const data = event.data as {
-        type?: string;
-        message?: string | undefined;
-      };
+      const data = event.data as Message;
 
       if (data.type === "vico-show-overlay" && data.message !== undefined) {
         // Delay mounting until the overlay is first shown to avoid adding an

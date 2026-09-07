@@ -1,6 +1,7 @@
 import type { Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
 import { getMediaElements } from "./dom";
+import type { Message } from "./overlay";
 
 export function setupKeybindings(settings: Settings) {
   const onKeyDown = (event: KeyboardEvent) => {
@@ -53,7 +54,10 @@ export function setupKeybindings(settings: Settings) {
     }
 
     // Send the message to the top-level window
-    globalThis.top?.postMessage({ type: "vico-show-overlay", message }, "*");
+    globalThis.top?.postMessage(
+      { type: "vico-show-overlay", message } satisfies Message,
+      "*",
+    );
   };
 
   document.addEventListener("keydown", onKeyDown, { capture: true });
