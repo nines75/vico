@@ -1,5 +1,6 @@
 import type { Settings } from "@/types/settings.types";
 import { objectEntries } from "ts-extras";
+import { getMediaElements } from "./dom";
 
 export function setupKeybindings(settings: Settings) {
   const onKeyDown = (event: KeyboardEvent) => {
@@ -21,26 +22,7 @@ export function setupKeybindings(settings: Settings) {
     if (item === undefined) return;
 
     const [keybindingName, keybinding] = item;
-    const mediaElements: HTMLMediaElement[] = [];
-
-    for (const element of document.querySelectorAll("video,audio")) {
-      // Ignore elements that are not visible
-      if (element instanceof HTMLMediaElement && element.checkVisibility()) {
-        mediaElements.push(element);
-      }
-    }
-
-    // Some websites (e.g. BBC, Reddit) put media inside shadow roots,
-    // so we need to traverse them. However, since most websites don't need this,
-    // only traverse when the active element has a shadow DOM to avoid overhead.
-    // Although this requires focusing the target element,
-    // it behaves the same as media elements in iframes.
-    const activeElement = document.activeElement;
-    if (activeElement !== null && activeElement.shadowRoot !== null) {
-      mediaElements.push(...getShadowDomMedia(activeElement.shadowRoot));
-    }
-
-    for (const media of mediaElements) {
+    for (const media of getMediaElements()) {
       switch (keybindingName) {
         case "faster": {
           const baseSpeed = media.playbackRate < 0.1 ? 0 : media.playbackRate;
@@ -70,22 +52,6 @@ export function setupKeybindings(settings: Settings) {
   };
 
   document.addEventListener("keydown", onKeyDown, { capture: true });
-}
-
-function getShadowDomMedia(shadowRoot: ShadowRoot): HTMLMediaElement[] {
-  const mediaElements: HTMLMediaElement[] = [];
-
-  const elements = shadowRoot.querySelectorAll("*");
-  for (const element of elements) {
-    if (element instanceof HTMLMediaElement) mediaElements.push(element);
-
-    // Media elements may be inside nested shadow roots (e.g. BBC), so traverse recursively.
-    if (element.shadowRoot !== null) {
-      mediaElements.push(...getShadowDomMedia(element.shadowRoot));
-    }
-  }
-
-  return mediaElements;
 }
 
 function showOverlay(message: string) {
