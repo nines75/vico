@@ -6,7 +6,10 @@ export function setupOverlay(ctx: ContentScriptContext) {
   globalThis.addEventListener(
     "message",
     catchAsync(async (event) => {
-      const data = event.data as { type?: string; message?: string };
+      const data = event.data as {
+        type?: string;
+        message?: string | undefined;
+      };
 
       if (data.type === "vico-show-overlay" && data.message !== undefined) {
         // Delay mounting until the overlay is first shown to avoid adding an

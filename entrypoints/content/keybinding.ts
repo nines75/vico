@@ -21,7 +21,9 @@ export function setupKeybindings(settings: Settings) {
     );
     if (item === undefined) return;
 
+    let message: string | undefined;
     const [keybindingName, keybinding] = item;
+
     for (const media of getMediaElements()) {
       switch (keybindingName) {
         case "faster": {
@@ -29,7 +31,7 @@ export function setupKeybindings(settings: Settings) {
           const speed = Math.min(baseSpeed + keybinding.value, 16); // max rate is 16
           media.playbackRate = speed;
 
-          showOverlay(`${speed.toFixed(2)}x`);
+          message = `${speed.toFixed(2)}x`;
 
           break;
         }
@@ -37,24 +39,22 @@ export function setupKeybindings(settings: Settings) {
           const speed = Math.max(media.playbackRate - keybinding.value, 0.07); // min rate is 0.0625
           media.playbackRate = speed;
 
-          showOverlay(`${speed.toFixed(2)}x`);
+          message = `${speed.toFixed(2)}x`;
 
           break;
         }
         case "reset": {
           media.playbackRate = 1;
-          showOverlay("1.00x");
+          message = "1.00x";
 
           break;
         }
       }
     }
+
+    // Send the message to the top-level window
+    globalThis.top?.postMessage({ type: "vico-show-overlay", message }, "*");
   };
 
   document.addEventListener("keydown", onKeyDown, { capture: true });
-}
-
-function showOverlay(message: string) {
-  // Send the message to the top-level window
-  globalThis.top?.postMessage({ type: "vico-show-overlay", message }, "*");
 }
