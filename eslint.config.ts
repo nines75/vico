@@ -83,11 +83,9 @@ export default withVueTs(
 
       "vue/multi-word-component-names": "off",
       "unicorn/name-replacements": "off",
-      "unicorn/no-null": "off",
       "unicorn/no-break-in-nested-loop": "off",
       "unicorn/require-array-sort-compare": "off",
       "unicorn/prefer-else-if": "off",
-      "unicorn/isolated-functions": "off",
       "unicorn/consistent-boolean-name": "off",
 
       // -------------------------------------------------------------------------------------------
@@ -95,11 +93,13 @@ export default withVueTs(
       // -------------------------------------------------------------------------------------------
 
       eqeqeq: "error",
+      "prefer-template": "error",
       "no-param-reassign": "error",
       "no-shadow": ["error", { allow: ["_"] }],
       "@typescript-eslint/consistent-type-imports": "warn",
       "@typescript-eslint/require-array-sort-compare": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
+      "@typescript-eslint/no-import-type-side-effects": "error",
       "@typescript-eslint/strict-boolean-expressions": [
         "error",
         {
