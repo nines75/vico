@@ -22,10 +22,13 @@ export function setupKeybindings(settings: Settings) {
     );
     if (item === undefined) return;
 
-    let message: string | undefined;
     const [keybindingName, keybinding] = item;
 
-    for (const media of getMediaElements()) {
+    const mediaElements = getMediaElements();
+    if (mediaElements.length === 0) return;
+
+    let message: string | undefined;
+    for (const media of mediaElements) {
       switch (keybindingName) {
         case "faster": {
           const baseSpeed = media.playbackRate < 0.1 ? 0 : media.playbackRate;
