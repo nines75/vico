@@ -9,12 +9,12 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^24.19.0",
+      "version": "^24.21.0",
       "onFail": "download"
     },
     "packageManager": {
       "name": "pnpm",
-      "version": "^11.0.9",
+      "version": "^11.26.0",
       "onFail": "download"
     }
   },
@@ -37,26 +37,26 @@
     "deepmerge-ts": "^8.0.2",
     "modern-normalize": "^3.0.1",
     "ts-extras": "^1.3.0",
-    "type-fest": "^5.8.0",
-    "vue": "^3.5.41"
+    "type-fest": "^5.9.0",
+    "vue": "^3.5.42"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.5.0",
     "@vue/eslint-config-typescript": "^14.9.0",
     "@wxt-dev/auto-icons": "^1.1.2",
     "@wxt-dev/module-vue": "^1.0.3",
     "concurrently": "^10.0.5",
-    "eslint": "^10.9.0",
+    "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-import-x": "^4.17.1",
-    "eslint-plugin-regexp": "^3.2.0",
-    "eslint-plugin-unicorn": "^73.0.0",
-    "eslint-plugin-vue": "^10.10.0",
+    "eslint-plugin-regexp": "^3.3.0",
+    "eslint-plugin-unicorn": "^74.0.0",
+    "eslint-plugin-vue": "^10.11.0",
     "prettier": "^3.9.6",
     "typescript": "^6.0.3",
-    "vite": "^8.2.1",
+    "vite": "^8.2.2",
     "vue-tsc": "^3.3.11",
     "wxt": "^0.21.4"
   }
