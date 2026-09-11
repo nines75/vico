@@ -13,17 +13,15 @@ export default defineConfig({
 
     return {
       permissions: ["storage"],
-      commands: {
-        ...(isDevelopment &&
-          isMv2 && {
+      ...(isDevelopment &&
+        isMv2 && {
+          commands: {
             _execute_browser_action: {
               description: "open settings",
-              suggested_key: {
-                default: "Alt+O",
-              },
+              suggested_key: { default: "Alt+O" },
             },
-          }),
-      },
+          },
+        }),
       ...(isMv2
         ? { browser_action: { default_title } }
         : { action: { default_title } }),
