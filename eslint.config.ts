@@ -12,22 +12,6 @@ const isCi = process.env.CI === "true";
 export default withVueTs(
   globalIgnores([".output/", ".wxt/"]),
 
-  js.configs.recommended,
-
-  // https://github.com/un-ts/eslint-plugin-import-x
-  importX.flatConfigs.typescript,
-
-  // https://github.com/sindresorhus/eslint-plugin-unicorn
-  unicorn.configs.recommended,
-
-  // https://github.com/ota-meshi/eslint-plugin-regexp
-  regex.configs.recommended,
-
-  // https://github.com/vuejs/eslint-config-typescript
-  ...vue.configs["flat/recommended"],
-  vueTsConfigs.strictTypeChecked,
-  vueTsConfigs.stylisticTypeChecked,
-
   {
     files: ["**/*.{ts,vue}"],
     languageOptions: {
@@ -35,6 +19,23 @@ export default withVueTs(
         projectService: true,
       },
     },
+    extends: [
+      js.configs.recommended,
+
+      // https://github.com/un-ts/eslint-plugin-import-x
+      importX.flatConfigs.typescript,
+
+      // https://github.com/sindresorhus/eslint-plugin-unicorn
+      unicorn.configs.recommended,
+
+      // https://github.com/ota-meshi/eslint-plugin-regexp
+      regex.configs.recommended,
+
+      // https://github.com/vuejs/eslint-config-typescript
+      vue.configs["flat/recommended"],
+      vueTsConfigs.strictTypeChecked,
+      vueTsConfigs.stylisticTypeChecked,
+    ],
     rules: {
       // -------------------------------------------------------------------------------------------
       // error => warn
@@ -96,6 +97,8 @@ export default withVueTs(
       "prefer-template": "error",
       "no-param-reassign": "error",
       "no-shadow": ["error", { allow: ["_"] }],
+
+      // typescript-eslint
       "@typescript-eslint/consistent-type-imports": "warn",
       "@typescript-eslint/require-array-sort-compare": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
@@ -108,6 +111,10 @@ export default withVueTs(
           allowNullableObject: false,
         },
       ],
+
+      // import-x
+      "import-x/no-duplicates": "warn",
+      "import-x/no-cycle": ["error", { maxDepth: isCi ? Infinity : 1 }],
       "import-x/no-restricted-paths": [
         "error",
         {
@@ -119,7 +126,6 @@ export default withVueTs(
           ],
         },
       ],
-      "import-x/no-cycle": ["error", { maxDepth: isCi ? Infinity : 1 }],
     },
   },
 

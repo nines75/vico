@@ -1,5 +1,5 @@
-import type { DeepMergeLeafURI } from "deepmerge-ts";
-import { deepmergeCustom, type DeepMergeNoFilteringURI } from "deepmerge-ts";
+import type { DeepMergeLeafURI, DeepMergeNoFilteringURI } from "deepmerge-ts";
+import { deepmergeCustom } from "deepmerge-ts";
 
 export function catchAsync<T extends unknown[]>(
   fn: (...args: T) => Promise<void>,
