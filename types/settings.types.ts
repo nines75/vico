@@ -12,7 +12,7 @@ export type settingsTab = "General" | "Filter" | "Support";
 
 export type KeybindingName = "slower" | "faster" | "reset";
 
-interface Keybinding {
+export interface Keybinding {
   key: string;
   value: number;
 }
