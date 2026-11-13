@@ -12,20 +12,19 @@ export function setupOverlay(ctx: ContentScriptContext) {
     "message",
     catchAsync(async (event) => {
       const data = event.data as Message;
+      if (data.type !== "vico-show-overlay" || data.message === undefined)
+        return;
 
-      if (data.type === "vico-show-overlay" && data.message !== undefined) {
-        // Delay mounting until the overlay is first shown to avoid adding an
-        // unnecessary element to pages that do not use this extension.
-        const host = await mountOverlay(ctx);
-        const overlay = host.shadowRoot?.querySelector(".overlay");
+      // Delay mounting until the overlay is first shown to avoid adding an
+      // unnecessary element to pages that do not use this extension.
+      const host = await mountOverlay(ctx);
+      const overlay = host.shadowRoot?.querySelector(".overlay");
+      if (!(overlay instanceof HTMLElement)) return;
 
-        if (overlay instanceof HTMLElement) {
-          overlay.textContent = data.message;
-          overlay.showPopover();
+      overlay.textContent = data.message;
+      overlay.showPopover();
 
-          hideOverlay(overlay);
-        }
-      }
+      hideOverlay(overlay);
     }),
   );
 }
