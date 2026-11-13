@@ -1,11 +1,12 @@
-import js from "@eslint/js";
 import { globalIgnores } from "eslint/config";
-import prettier from "eslint-config-prettier/flat";
+import { withVueTs, vueTsConfigs } from "@vue/eslint-config-typescript";
 import { importX } from "eslint-plugin-import-x";
+import js from "@eslint/js";
+import prettier from "eslint-config-prettier/flat";
 import unicorn from "eslint-plugin-unicorn";
 import regex from "eslint-plugin-regexp";
 import vue from "eslint-plugin-vue";
-import { withVueTs, vueTsConfigs } from "@vue/eslint-config-typescript";
+import stylistic from "@stylistic/eslint-plugin";
 
 const isCi = process.env.CI === "true";
 
@@ -18,6 +19,9 @@ export default withVueTs(
       parserOptions: {
         projectService: true,
       },
+    },
+    plugins: {
+      "@stylistic": stylistic,
     },
     extends: [
       js.configs.recommended,
@@ -84,9 +88,6 @@ export default withVueTs(
 
       "vue/multi-word-component-names": "off",
       "unicorn/name-replacements": "off",
-      "unicorn/no-break-in-nested-loop": "off",
-      "unicorn/require-array-sort-compare": "off",
-      "unicorn/prefer-else-if": "off",
       "unicorn/consistent-boolean-name": "off",
 
       // -------------------------------------------------------------------------------------------
@@ -125,6 +126,14 @@ export default withVueTs(
             },
           ],
         },
+      ],
+
+      // stylistic
+      "@stylistic/padding-line-between-statements": [
+        "error",
+        { blankLine: "always", prev: "*", next: "break" },
+        { blankLine: "always", prev: "*", next: "continue" },
+        { blankLine: "always", prev: "*", next: "return" },
       ],
     },
   },
