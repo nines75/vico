@@ -3,7 +3,7 @@ import { catchAsync } from "@/utils/util";
 import debounce from "debounce";
 
 export interface Message {
-  type?: string;
+  type?: string; // Needed because messages may also be received from other scripts.
   message?: string | undefined;
 }
 
