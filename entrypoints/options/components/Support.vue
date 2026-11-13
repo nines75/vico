@@ -18,6 +18,12 @@ const config = {
       url: "https://github.com/nines75/vico/discussions",
     },
   ],
+  other: [
+    {
+      name: "Third-Party Licenses",
+      url: "/third-party-notices.txt",
+    },
+  ],
 };
 </script>
 
@@ -29,6 +35,11 @@ const config = {
   </H2>
   <H2 name="contact">
     <template v-for="item in config.contact" :key="item.name">
+      <a class="button" :href="item.url" target="_blank">{{ item.name }}</a>
+    </template>
+  </H2>
+  <H2 name="other">
+    <template v-for="item in config.other" :key="item.name">
       <a class="button" :href="item.url" target="_blank">{{ item.name }}</a>
     </template>
   </H2>
