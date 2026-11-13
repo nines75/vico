@@ -1,6 +1,6 @@
+import "./overlay.css";
 import { defineContentScript } from "#imports";
 import { loadSettings } from "@/utils/storage";
-import "./overlay.css";
 import { setupOverlay } from "./overlay";
 import { setupKeybindings } from "./keybinding";
 import { shouldEnable } from "./filter";
