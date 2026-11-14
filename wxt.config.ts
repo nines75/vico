@@ -3,9 +3,6 @@ import { defineConfig } from "wxt";
 export default defineConfig({
   modules: ["@wxt-dev/auto-icons", "@wxt-dev/module-vue"],
   imports: false,
-  zip: {
-    artifactTemplate: "firefox.xpi",
-  },
   manifest: ({ mode, manifestVersion }) => {
     const isMv2 = manifestVersion === 2;
     const isDevelopment = mode === "development" && isMv2;
