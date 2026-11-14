@@ -1,14 +1,12 @@
 export interface Settings {
   enabled: boolean;
-  selectedSettingsTab: settingsTab;
+  selectedSettingsTab: "General" | "Filter" | "Support";
   keybindings: Record<KeybindingName, Keybinding>;
   filter: {
     mode: "blacklist" | "whitelist";
     rules: Rule[];
   };
 }
-
-export type settingsTab = "General" | "Filter" | "Support";
 
 export type KeybindingName = "slower" | "faster" | "reset";
 
