@@ -40,7 +40,7 @@ I also considered forking the original `igrigorik/videospeed`, which is still ma
 
 1. Run `pnpm install`
 2. Run `pnpm zip`
-3. Load `.output/firefox.xpi` from `about:addons`
+3. Load `.output/vico-{version}-firefox.zip` from `about:addons`
 
 ### Chrome
 
