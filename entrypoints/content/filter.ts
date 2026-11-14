@@ -7,7 +7,7 @@ export function shouldEnable(settings: Settings) {
   return (isMatch(settings) ? "whitelist" : "blacklist") === mode;
 }
 
-function isMatch(settings: Settings) {
+export function isMatch(settings: Settings) {
   for (const rule of settings.filter.rules) {
     if (!rule.enabled || rule.pattern === "") continue;
 

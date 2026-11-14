@@ -31,7 +31,9 @@
     "lint": "eslint --max-warnings=0",
     "format": "prettier . --write --list-different",
     "format:ci": "prettier . --check",
-    "check": "concurrently 'pnpm build' 'pnpm compile' 'pnpm lint' 'pnpm format:ci'"
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "check": "concurrently 'pnpm build' 'pnpm compile' 'pnpm lint' 'pnpm format:ci' 'pnpm test:ci'"
   },
   "dependencies": {
     "debounce": "^3.0.0",
@@ -59,6 +61,7 @@
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",
     "vite": "^8.3.7",
+    "vitest": "^5.1.0",
     "vue-tsc": "^3.3.14",
     "wxt": "^0.21.5"
   }
