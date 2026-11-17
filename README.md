@@ -4,6 +4,8 @@ Video Speed Controller
 
 This is a fork of [codebicycle/videospeed](https://github.com/codebicycle/videospeed).
 
+[![Link to the installation page](assets/amo-button.png)](https://addons.mozilla.org/addon/vico)
+
 ## Features
 
 - Change video speed (slower/faster/reset, via keybindings only)
